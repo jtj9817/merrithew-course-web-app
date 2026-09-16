@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web UI &middot; Course Inquiry Dashboard</title>
+<link rel="stylesheet" href="assets/viewer.css">
+</head>
+<body data-page="sub--sub-webui" data-page-kind="graph" data-page-file="sub--sub-webui.html">
+<a class="skip" href="#canvas-wrap">Skip to diagram</a>
+<header class="topbar">
+  <div class="brand">
+    <span class="sysname">Course Inquiry Dashboard</span>
+    <span class="mode-pill">greenfield</span>
+  </div>
+  <nav class="mainnav"><a href="index.html">Overview</a><a href="decomposition.html">Decomposition</a><a href="traceability.html">Traceability</a><div class="dropdown"><button class="dd-btn" aria-haspopup="true" aria-expanded="false">Subsystems <span aria-hidden="true">&#9662;</span></button><div class="dd-menu" role="menu"><a href="sub--sub-webui.html" role="menuitem">Web UI</a><a href="sub--sub-api.html" role="menuitem">HTTP API</a><a href="sub--sub-app.html" role="menuitem">Application</a><a href="sub--sub-data.html" role="menuitem">Persistence</a><a href="sub--sub-crm.html" role="menuitem">CRM Integration</a></div></div><div class="dropdown"><button class="dd-btn" aria-haspopup="true" aria-expanded="false">Flows <span aria-hidden="true">&#9662;</span></button><div class="dd-menu" role="menu"><a href="flow--flow-submit.html" role="menuitem">Inquiry intake and CRM sync</a><a href="flow--flow-triage.html" role="menuitem">Staff triage: filter and update status</a></div></div></nav>
+  <div class="topbar-right">
+    <input id="search" type="search" placeholder="Search  /" aria-label="Search the model" autocomplete="off">
+    <div id="search-results" role="listbox" hidden></div>
+  </div>
+</header>
+<div class="titlebar">
+  <h1>Web UI</h1>
+  <p>What staff touch: a Razor Pages shell hosting a React + TypeScript island for the interactive dashboard.  Faded boxes are outside this subsystem and are shown only for context.</p>
+</div>
+<div class="workspace">
+  <main id="canvas-wrap" tabindex="-1">
+    <div class="toolbar" role="toolbar" aria-label="Diagram controls">
+      <button data-act="zoom-out" title="Zoom out (-)">&minus;</button>
+      <button data-act="zoom-in" title="Zoom in (+)">+</button>
+      <button data-act="fit" title="Fit to screen (0)">Fit</button>
+      <button data-act="reset" title="Actual size (1)">1:1</button>
+      <span class="tb-sep"></span>
+      <button data-act="annotate" title="Annotate mode (a)" aria-pressed="false">Annotate</button>
+      <button data-act="trace" title="Trace mode (t)" aria-pressed="false">Trace</button>
+      <span class="tb-sep"></span>
+      <button data-act="export-ann" title="Download your annotations as JSON">Export notes</button>
+      <button data-act="import-ann" title="Load an annotations JSON file">Import</button>
+      <input type="file" id="ann-file" accept="application/json" hidden>
+      <span class="zoom-readout" id="zoom-readout">100%</span>
+    </div>
+    <svg id="canvas" viewBox="0 0 1065 236" data-w="1065" data-h="236" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="context-stroke"/></marker></defs><g id="viewport"><g class="layer-bands"><g class="band" data-id="sub.webui"><rect class="band-box" x="0.0" y="80.0" width="1042.76" height="134" rx="10"/><text class="band-title" x="16.0" y="101.0">Web UI</text></g></g><g class="layer-edges"><g class="edge" data-id="e.staff.razor" data-src="actor.staff" data-dst="comp.razor"><path class="edge-hit" d="M 172.0 23.0 L 216.0 23.0 Q 225.0 23.0 225.0 32.0 L 225.0 153.0 Q 225.0 162.0 234.0 162.0 L 296.0 162.0" fill="none" stroke="transparent" stroke-width="14"/><path class="edge-line" d="M 172.0 23.0 L 216.0 23.0 Q 225.0 23.0 225.0 32.0 L 225.0 153.0 Q 225.0 162.0 234.0 162.0 L 296.0 162.0" fill="none" stroke="#3d4b5c" stroke-width="1.7" marker-end="url(#arrow)"/></g><g class="edge" data-id="e.staff.openapi" data-src="actor.staff" data-dst="sub.api"><path class="edge-hit" d="M 172.0 23.0 L 376.4 23.0 Q 380.4 23.0 384.4 23.0 L 384.4 23.0 Q 388.4 23.0 392.4 23.0 L 663.8 23.0 Q 667.8 23.0 671.8 23.0 L 671.8 23.0 Q 675.8 23.0 679.8 23.0 L 870.8 23.0" fill="none" stroke="transparent" stroke-width="14"/><path class="edge-line" d="M 172.0 23.0 L 376.4 23.0 Q 380.4 23.0 384.4 23.0 L 384.4 23.0 Q 388.4 23.0 392.4 23.0 L 663.8 23.0 Q 667.8 23.0 671.8 23.0 L 671.8 23.0 Q 675.8 23.0 679.8 23.0 L 870.8 23.0" fill="none" stroke="#3d4b5c" stroke-width="1.7" marker-end="url(#arrow)"/></g><g class="edge" data-id="e.razor.react" data-src="comp.razor" data-dst="comp.react"><path class="edge-hit" d="M 472.8 162.0 L 596.8 162.0" fill="none" stroke="transparent" stroke-width="14"/><path class="edge-line" d="M 472.8 162.0 L 596.8 162.0" fill="none" stroke="#a8471a" stroke-width="1.7" stroke-dasharray="10 3 2 3" marker-end="url(#arrow)"/></g><g class="edge" data-id="e.react.controller" data-src="comp.react" data-dst="sub.api"><path class="edge-hit" d="M 746.8 162.0 L 790.8 162.0 Q 799.8 162.0 799.8 153.0 L 799.8 32.0 Q 799.8 23.0 808.8 23.0 L 870.8 23.0" fill="none" stroke="transparent" stroke-width="14"/><path class="edge-line" d="M 746.8 162.0 L 790.8 162.0 Q 799.8 162.0 799.8 153.0 L 799.8 32.0 Q 799.8 23.0 808.8 23.0 L 870.8 23.0" fill="none" stroke="#3d4b5c" stroke-width="1.7" marker-end="url(#arrow)"/></g></g><g class="layer-nodes"><g class="node ghost" data-id="actor.staff" opacity="0.55" tabindex="0" role="button" aria-label="Merrithew Staff"><rect class="nd-shape" x="22.0" y="0.0" width="150" height="46" rx="23.0" fill="#fdf0dd" stroke="#b8761a" stroke-width="1.6" opacity="0.45"/><text class="nd-title" x="97.0" y="22.0" text-anchor="middle" fill="#6b4409">Merrithew Staff</text><text class="nd-kind" x="32.0" y="39.0">PERSON</text></g><g class="node ghost" data-id="sub.api" opacity="0.55" tabindex="0" role="button" aria-label="HTTP API"><rect class="nd-shape" x="870.76" y="0.0" width="150" height="46" rx="7" fill="#eaeef4" stroke="#4a5f7a" stroke-width="1.6" opacity="0.45"/><rect x="870.76" y="6.0" width="4" height="34" rx="2" fill="#4a5f7a" opacity="0.45"/><text class="nd-title" x="945.76" y="22.0" text-anchor="middle" fill="#25324a">HTTP API</text><text class="nd-kind" x="880.76" y="39.0">SUBSYSTEM</text></g><g class="node" data-id="comp.react" tabindex="0" role="button" aria-label="React island"><rect class="nd-shape" x="596.76" y="132.0" width="150" height="60" rx="7" fill="#e6f3fb" stroke="#2d7fae" stroke-width="1.6"/><rect x="596.76" y="138.0" width="4" height="48" rx="2" fill="#2d7fae"/><text class="nd-title" x="671.76" y="152.0" text-anchor="middle" fill="#154a68">React island</text><text class="nd-sub" x="671.76" y="166.0" text-anchor="middle">React, TypeScript</text><text class="nd-kind" x="606.76" y="185.0">UI</text><g class="nd-badge"><circle cx="734.76" cy="144.0" r="9"/><text x="734.76" y="148.0" text-anchor="middle">1</text></g></g><g class="node" data-id="comp.razor" tabindex="0" role="button" aria-label="Razor Pages shell"><rect class="nd-shape" x="296.0" y="132.0" width="176.76" height="60" rx="7" fill="#e6f3fb" stroke="#2d7fae" stroke-width="1.6"/><rect x="296.0" y="138.0" width="4" height="48" rx="2" fill="#2d7fae"/><text class="nd-title" x="384.38" y="152.0" text-anchor="middle" fill="#154a68">Razor Pages shell</text><text class="nd-sub" x="384.38" y="166.0" text-anchor="middle">ASP.NET Core Razor Pages</text><text class="nd-kind" x="306.0" y="185.0">UI</text></g></g><g class="layer-edge-labels"><g class="edge edge-label-g" data-id="e.staff.razor" data-src="actor.staff" data-dst="comp.razor"><rect class="edge-label-bg" x="188.6" y="207.0" width="143.9" height="19.0" rx="3"/><text class="edge-label" x="260.5" y="219.0" text-anchor="middle">HTTPS - open dashboard</text></g><g class="edge edge-label-g" data-id="e.staff.openapi" data-src="actor.staff" data-dst="sub.api"><rect class="edge-label-bg" x="184.9" y="14.0" width="120.1" height="19.0" rx="3"/><text class="edge-label" x="244.9" y="26.0" text-anchor="middle">HTTPS - Swagger UI</text></g><g class="edge edge-label-g" data-id="e.razor.react" data-src="comp.razor" data-dst="comp.react"><rect class="edge-label-bg" x="492.6" y="137.0" width="84.4" height="19.0" rx="3"/><text class="edge-label" x="534.8" y="149.0" text-anchor="middle">mount island</text></g><g class="edge edge-label-g" data-id="e.react.controller" data-src="comp.react" data-dst="sub.api"><rect class="edge-label-bg" x="772.2" y="6.0" width="126.0" height="31.0" rx="3"/><text class="edge-label" x="835.3" y="18.0" text-anchor="middle">HTTPS/JSON - list,</text><text class="edge-label" x="835.3" y="30.0" text-anchor="middle">get, update, delete</text></g></g><g class="layer-annotations" id="ann-layer"></g></g></svg>
+    <details class="legend"><summary>Legend</summary><div class="lg-row"><span class="lg-item"><i style="background:#fdf0dd;border-color:#b8761a"></i>person</span><span class="lg-item"><i style="background:#e6f3fb;border-color:#2d7fae"></i>ui</span><span class="lg-item"><i style="background:#e4edf7;border-color:#1f5f95"></i>service</span><span class="lg-item"><i style="background:#e2f3ec;border-color:#0e7a5c"></i>datastore</span><span class="lg-item"><i style="background:#f8ecf3;border-color:#a4548a"></i>queue</span><span class="lg-item"><i style="background:#fbeadf;border-color:#a8471a"></i>job</span><span class="lg-item"><i style="background:#fdf0dd;border-color:#b8761a"></i>external</span></div><div class="lg-row"><span class="lg-item"><b style="border-color:#3d4b5c;border-bottom-style:solid"></b>sync</span><span class="lg-item"><b style="border-color:#a4548a;border-bottom-style:dashed"></b>async</span><span class="lg-item"><b style="border-color:#0e7a5c;border-bottom-style:dashed"></b>data</span><span class="lg-item"><b style="border-color:#a8471a;border-bottom-style:dashed"></b>control</span></div><p class="lg-note">Shape and the badge in each box carry the same information as the colour, so the diagram survives being printed in greyscale.</p></details>
+  </main>
+  <aside id="inspector" aria-live="polite">
+    <div class="ins-empty"><h2>Inspector</h2><p>Select any box, arrow or row to see what it is, where it came from, and everything it traces to.</p><p class="muted">Scroll to zoom, drag to pan. Press <kbd>/</kbd> to search, <kbd>t</kbd> to trace, <kbd>a</kbd> to annotate.</p></div>
+  </aside>
+</div>
+
+<div id="ann-popup" hidden></div>
+<div id="toast" hidden></div>
+<script src="data/model.js"></script>
+<script src="assets/viewer.js"></script>
+</body>
+</html>

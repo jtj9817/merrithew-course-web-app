@@ -44,7 +44,7 @@ status update. The island talks to the same-origin Web API via `fetch`.
 **Good:** single origin and deployable; shows client and server skills; graceful
 shell.
 
-**Bad:** a JavaScript build step (npm + Vite) enters the build; the Razor+React
+**Bad:** a JavaScript build step (pnpm + Vite) enters the build; the Razor+React
 hybrid is less conventional than a clean SPA split, so it needs explaining.
 
 **Watch for:** document the frontend build step in `README.md`; keep the island's

@@ -2,8 +2,8 @@ window.SYSTEM_MODEL = {
  "meta": {
   "name": "Course Inquiry Dashboard",
   "mode": "greenfield",
-  "version": "0.1.0",
-  "description": "Target design for Merrithew's internal course-inquiry tool: how a visitor's inquiry is captured, persisted, synced to a CRM, and worked by staff. Agreed in the planning session on 2026-09-16; no code exists yet.",
+  "version": "0.2.0",
+  "description": "Target design for Merrithew's internal course-inquiry tool. No application code exists yet. Boundary contracts: docs/architecture/contracts.md (ADR-0009). Test-first implementation and case catalogs: docs/testing/tdd-plan.md. All verification evidence is planned, not passing.",
   "source_of_truth": "docs/architecture/model.json",
   "generated": "2026-09-16"
  },
@@ -83,11 +83,11 @@ window.SYSTEM_MODEL = {
    "tech": [
     "ASP.NET Core Razor Pages"
    ],
-   "description": "Server-rendered page shell + layout. Serves the dashboard page and mounts the React island; holds no inquiry state of its own.",
+   "description": "Server-rendered layout and /dashboard mount point with loading/no-JavaScript guidance. Inquiry interaction requires React; the shell is not a server-rendered queue.",
    "responsibilities": [
-    "Render layout and dashboard page",
-    "Mount the React island",
-    "Serve static assets from wwwroot"
+    "Render layout and dashboard mount point",
+    "Resolve Vite manifest entry, CSS and imports",
+    "Serve production assets from a dedicated wwwroot subfolder"
    ],
    "evidence": [
     "backend/Pages/",
@@ -105,12 +105,12 @@ window.SYSTEM_MODEL = {
     "TypeScript",
     "Vite"
    ],
-   "description": "The interactive dashboard: inquiry list, status filter, detail view, status update, and success/error messages.",
+   "description": "List, filter, paging, detail and status update with safe accessible feedback. Handles stale responses and page reconciliation. Create/delete use API/Swagger, not island controls (contract C7).",
    "responsibilities": [
-    "List + filter inquiries",
-    "Show inquiry detail",
-    "Update status",
-    "Surface success/error messages from ProblemDetails"
+    "List + filter + page inquiries",
+    "Show detail without stale-response overwrite",
+    "Update status and reconcile filters/pages",
+    "Surface safe accessible success/error feedback"
    ],
    "evidence": [
     "frontend/src/"
@@ -144,11 +144,11 @@ window.SYSTEM_MODEL = {
    "tech": [
     "DataAnnotations"
    ],
-   "description": "DataAnnotations on the request DTOs. Runs at model binding; invalid input short-circuits to 400 ProblemDetails before any business logic.",
+   "description": "DataAnnotations plus explicit status name/presence checks on DTOs. Invalid binding/validation returns 400 ValidationProblemDetails before business logic. See contracts C1-C3.",
    "responsibilities": [
-    "Required-field validation",
-    "Email-format validation",
-    "Known-status-value validation"
+    "Required-field, length and email validation",
+    "Reject missing/null/numeric/composite status",
+    "Validate paging bounds without overflow"
    ],
    "evidence": [
     "backend/Models/Dtos/"
@@ -163,11 +163,11 @@ window.SYSTEM_MODEL = {
    "tech": [
     "Exception middleware"
    ],
-   "description": "Turns unhandled exceptions and missing-record cases into consistent ProblemDetails responses (400/404/500).",
+   "description": "Consistent API ProblemDetails for binding, validation, routing, missing resources and unhandled errors. Controllers map missing service results; status-code and exception handling cover their separate paths.",
    "responsibilities": [
-    "Map NotFound to 404",
-    "Map validation to 400",
-    "Map unhandled to 500 without leaking internals"
+    "Format 400/404/405/415 responses",
+    "Sanitize 500s in Development and Production",
+    "Avoid visitor data and raw exceptions in logs"
    ],
    "evidence": [
     "backend/Middleware/"
@@ -200,13 +200,13 @@ window.SYSTEM_MODEL = {
    "tech": [
     "C#"
    ],
-   "description": "The business rules in one place: default status New, system-set timestamps, hard delete, filtered/paged queries, and triggering CRM sync after a create.",
+   "description": "Forces New and UTC timestamps on create; applies free-form status changes (same-status no-op), hard deletion and deterministic filtered pages. Awaits bounded CRM sync only after commit (contracts C2-C6).",
    "responsibilities": [
-    "Apply Status=New + timestamps on create",
-    "Advance UpdatedDate on change",
-    "Hard-delete an inquiry",
-    "Filter/paginate/sort",
-    "Orchestrate CRM sync"
+    "Apply Status=New and one UTC instant on create",
+    "Timestamp actual status changes, not no-ops",
+    "Hard-delete without resurrection on concurrent deletion",
+    "Filter/count/page/sort",
+    "Isolate only post-commit CRM failures"
    ],
    "evidence": [
     "backend/Services/InquiryService.cs"
@@ -221,11 +221,11 @@ window.SYSTEM_MODEL = {
    "tech": [
     "EF Core 10"
    ],
-   "description": "EF Core mapping and queries for CourseInquiry. The only writer to the store. Code-first; migrations create the schema.",
+   "description": "EF Core mapping and SQLite queries for CourseInquiry. The service writes through this context; migrations run before requests. Fresh contexts and independent connections prove persistence and commit visibility.",
    "responsibilities": [
-    "Map CourseInquiry entity",
-    "Execute filtered/paged queries",
-    "Persist changes in a single SaveChanges"
+    "Map nullability, named statuses and UTC values",
+    "Execute filtered count and ordered page queries",
+    "Commit each mutation before external work"
    ],
    "evidence": [
     "backend/Models/AppDbContext.cs",
@@ -256,11 +256,11 @@ window.SYSTEM_MODEL = {
     "C#",
     "Polly"
    ],
-   "description": "Implements the ICrmClient port with a fake that stands in for a real CRM. Retries with exponential backoff; a final failure is caught, never propagated to the inquiry create.",
+   "description": "Implements Task-returning ICrmClient. Real Polly pipeline surrounds deterministic simulated attempts; exceptions signal failure to the post-commit service boundary. No background worker or outbox.",
    "responsibilities": [
-    "Accept inquiry data",
-    "Retry with backoff on transient failure",
-    "Return a structured success/failure result"
+    "Accept committed inquiry data",
+    "Retry transient errors at most three times after the original attempt",
+    "Honor attempt/total timeouts and cancellation (C6)"
    ],
    "evidence": [
     "backend/Services/ICrmClient.cs",
@@ -269,18 +269,18 @@ window.SYSTEM_MODEL = {
   },
   {
    "id": "comp.crmlog",
-   "name": "Sync audit log",
+   "name": "Sync operational log",
    "level": 2,
    "kind": "service",
    "parent": "sub.crm",
    "tech": [
     "ILogger (structured)"
    ],
-   "description": "Structured log of every CRM sync attempt and its outcome via the built-in logger. Email and phone are redacted so sensitive data never lands in logs.",
+   "description": "Attempt and final-outcome metadata only. Omit all visitor fields and raw exceptions from messages, structured state, scopes and enabled telemetry. Not a durable business audit history.",
    "responsibilities": [
-    "Record attempt + outcome + inquiry id",
-    "Redact email/phone",
-    "No DB table needed for the assessment"
+    "Record persisted inquiry id, attempt and outcome",
+    "Prevent sensitive payloads reaching any configured sink",
+    "No CRM log table required"
    ],
    "evidence": [
     "backend/Services/SimulatedCrmClient.cs"
@@ -291,7 +291,7 @@ window.SYSTEM_MODEL = {
    "name": "Website Visitor",
    "kind": "person",
    "level": 0,
-   "description": "Submits a course inquiry from the public website. Unauthenticated; never sees the admin tool."
+   "description": "Submits an inquiry from an external public form (out of scope). Visitor/staff are intended roles, not enforced access boundaries: this local assessment has no authentication."
   },
   {
    "id": "actor.staff",
@@ -345,17 +345,17 @@ window.SYSTEM_MODEL = {
    "to": "comp.react",
    "label": "mount island",
    "kind": "control",
-   "mechanism": "Razor renders the shell and a mount point; the Vite-built TS bundle (in wwwroot) boots the React island client-side."
+   "mechanism": "Razor resolves the Vite production manifest entry and CSS/imports from a dedicated wwwroot asset subfolder; React boots client-side without a Vite server."
   },
   {
    "id": "e.react.controller",
    "from": "comp.react",
    "to": "comp.controller",
-   "label": "HTTPS/JSON - list, get, update, delete",
+   "label": "HTTPS/JSON - list, get, update",
    "kind": "sync",
    "protocol": "HTTPS",
    "interface": "iface.rest",
-   "mechanism": "fetch() with JSON. Errors arrive as ProblemDetails and are shown to the user as clear messages."
+   "mechanism": "Same-origin fetch. The island handles ProblemDetails/non-JSON failures, suppresses stale responses, and refreshes the filtered page after mutations."
   },
   {
    "id": "e.controller.validation",
@@ -363,7 +363,7 @@ window.SYSTEM_MODEL = {
    "to": "comp.validation",
    "label": "validate DTO",
    "kind": "control",
-   "mechanism": "DataAnnotations checked on model binding; invalid input returns 400 ProblemDetails before the action body runs."
+   "mechanism": "JSON binding and DataAnnotations plus explicit status/query checks; invalid input returns 400 ValidationProblemDetails before the action executes."
   },
   {
    "id": "e.controller.errmw",
@@ -371,7 +371,7 @@ window.SYSTEM_MODEL = {
    "to": "comp.errmw",
    "label": "exceptions -> ProblemDetails",
    "kind": "control",
-   "mechanism": "NotFound and unhandled exceptions are formatted centrally into consistent error responses."
+   "mechanism": "Controllers map missing-resource results; configured ProblemDetails, status-code and exception paths produce safe contract C3 responses."
   },
   {
    "id": "e.openapi.controller",
@@ -395,7 +395,7 @@ window.SYSTEM_MODEL = {
    "to": "comp.dbcontext",
    "label": "CRUD + filtered/paged queries",
    "kind": "sync",
-   "mechanism": "Service builds IQueryable (Where(status) + OrderBy + Skip/Take) and persists via a single SaveChanges."
+   "mechanism": "Service filters before count and paging; CreatedDate+Id order is deterministic. Count and page are separate queries; each mutation commits through SaveChangesAsync before CRM work."
   },
   {
    "id": "e.dbcontext.db",
@@ -410,10 +410,10 @@ window.SYSTEM_MODEL = {
    "id": "e.service.crmclient",
    "from": "comp.service",
    "to": "comp.crmclient",
-   "label": "SyncInquiryAsync",
-   "kind": "async",
+   "label": "await SyncInquiryAsync",
+   "kind": "sync",
    "interface": "iface.crm",
-   "mechanism": "Called AFTER the inquiry is persisted. The sync result is handled by the service; a CRM failure must not roll back or fail the create."
+   "mechanism": "Awaited in the same request AFTER confirmed commit. CRM exceptions/cancellation cannot undo storage. A disconnected caller may not receive the created response (C5)."
   },
   {
    "id": "e.crmclient.crm",
@@ -421,8 +421,7 @@ window.SYSTEM_MODEL = {
    "to": "ext.crm",
    "label": "push inquiry (simulated)",
    "kind": "sync",
-   "protocol": "HTTPS",
-   "mechanism": "Simulated call - no real endpoint/keys. Timeout + up to 3 retries with exponential backoff; after exhaustion the attempt is recorded as failed."
+   "mechanism": "In-process only, not actual HTTPS. At most 4 attempts, 100/200/400ms backoff, 500ms attempt timeout and 2s total budget; cooperative cancellation. See C6."
   },
   {
    "id": "e.crmclient.crmlog",
@@ -430,7 +429,7 @@ window.SYSTEM_MODEL = {
    "to": "comp.crmlog",
    "label": "record attempt + outcome",
    "kind": "control",
-   "mechanism": "Structured log line with inquiry id and result; email and phone are redacted before logging."
+   "mechanism": "Log safe metadata only. No visitor fields, raw exceptions or unsafe telemetry; inspect structured state, scopes and formatted output."
   }
  ],
  "interfaces": [
@@ -443,7 +442,7 @@ window.SYSTEM_MODEL = {
     "comp.openapi"
    ],
    "contract": "OpenAPI (Swagger) - /api/inquiries",
-   "description": "The five endpoints from the spec. JSON in/out, ProblemDetails for errors. The public website form and the React island are both clients of this contract."
+   "description": "Five JSON endpoints with explicit wire, paging and error contracts in docs/architecture/contracts.md C1-C4. Create/delete remain available through API/Swagger; the public form is external."
   },
   {
    "id": "iface.crm",
@@ -452,8 +451,8 @@ window.SYSTEM_MODEL = {
    "consumers": [
     "comp.service"
    ],
-   "contract": "ICrmClient.SyncInquiryAsync(inquiry)",
-   "description": "The seam between the app and the CRM. The service depends on this port, not on a vendor - so the simulated client can be swapped for a real one, and tests can force success or failure."
+   "contract": "Task ICrmClient.SyncInquiryAsync(inquiry, CancellationToken)",
+   "description": "Awaited post-commit seam. Completion means success; exceptions signal failure and are isolated by the service. Tests control outcomes while retry tests retain the real Polly pipeline."
   }
  ],
  "requirements": [
@@ -471,13 +470,13 @@ window.SYSTEM_MODEL = {
   {
    "id": "REQ-SYS-002",
    "level": 0,
-   "text": "A submitted inquiry is never silently lost: creation either persists the inquiry and returns it, or returns an error.",
+   "text": "A 201 response identifies a committed inquiry readable independently; definite pre-commit write failure reports an error and does not invoke CRM. A lost response can leave the caller uncertain about a committed write.",
    "allocated_to": [
     "sub.api",
     "sub.app",
     "sub.data"
    ],
-   "rationale": "The Part 5 troubleshooting scenario - inquiries not appearing in the admin list - is precisely the failure the design must prevent (spec:88)."
+   "rationale": "Troubleshooting scenario (spec:88), bounded by real commit/transport semantics in contract C5; no exactly-once intake promise."
   },
   {
    "id": "REQ-SYS-003",
@@ -492,12 +491,13 @@ window.SYSTEM_MODEL = {
   {
    "id": "REQ-SYS-004",
    "level": 0,
-   "text": "Sensitive inquirer data (email, phone) never appears in logs.",
+   "text": "Visitor data never appears in application logs, structured properties, scopes, or attached exceptions; CRM logs use safe metadata only.",
    "allocated_to": [
     "sub.crm",
-    "sub.app"
+    "sub.app",
+    "sub.api"
    ],
-   "rationale": "Explicit requirement of the CRM integration and the security answer (spec:80, 98)."
+   "rationale": "Privacy requirement (spec:80, 98), refined by contract C6 to cover telemetry and raw exception leaks."
   },
   {
    "id": "REQ-SYS-005",
@@ -520,6 +520,17 @@ window.SYSTEM_MODEL = {
    "rationale": "The frontend acceptance list (spec:65-69)."
   },
   {
+   "id": "REQ-UI-002",
+   "level": 1,
+   "parent": "REQ-SYS-001",
+   "text": "The built dashboard loads from one host, handles stale requests and mutation/page recovery, and renders safe, keyboard-accessible feedback.",
+   "allocated_to": [
+    "comp.react",
+    "comp.razor"
+   ],
+   "rationale": "Makes frontend acceptance (spec:65-69) and accessibility discussion (spec:100-102) testable; contract C7."
+  },
+  {
    "id": "REQ-API-001",
    "level": 1,
    "parent": "REQ-SYS-001",
@@ -533,7 +544,7 @@ window.SYSTEM_MODEL = {
    "id": "REQ-API-002",
    "level": 1,
    "parent": "REQ-SYS-005",
-   "text": "Required fields and email format are validated; violations return 400 with details.",
+   "text": "Required fields, length bounds, email format and input shapes are validated before side effects; violations return safe 400 details.",
    "allocated_to": [
     "comp.validation",
     "comp.controller"
@@ -555,7 +566,7 @@ window.SYSTEM_MODEL = {
    "id": "REQ-API-004",
    "level": 1,
    "parent": "REQ-SYS-001",
-   "text": "The list endpoint supports pagination and sorting.",
+   "text": "Listing provides bounded, deterministic filtered pagination and an explicit envelope; invalid paging/sort values return 400 (contract C4).",
    "allocated_to": [
     "comp.controller",
     "comp.service"
@@ -577,7 +588,7 @@ window.SYSTEM_MODEL = {
    "id": "REQ-APP-001",
    "level": 1,
    "parent": "REQ-SYS-001",
-   "text": "New inquiries default to status New; CreatedDate and UpdatedDate are system-set, and UpdatedDate advances on every change.",
+   "text": "New inquiries force New and identical server-assigned UTC timestamps; actual status changes set UpdatedDate, same-status no-ops leave it unchanged. Timestamps are not monotonic versions.",
    "allocated_to": [
     "comp.service"
    ],
@@ -587,7 +598,7 @@ window.SYSTEM_MODEL = {
    "id": "REQ-APP-002",
    "level": 1,
    "parent": "REQ-SYS-001",
-   "text": "Status may be set to any valid status value in any order; unknown values are rejected.",
+   "text": "Any defined status may replace any other; missing/null/numeric/composite or unknown wire values are rejected. Internal undefined enum values cannot persist.",
    "allocated_to": [
     "comp.service",
     "comp.validation"
@@ -595,15 +606,47 @@ window.SYSTEM_MODEL = {
    "rationale": "Free-form transitions decision (ADR-0008); staff correct statuses in both directions."
   },
   {
+   "id": "REQ-APP-003",
+   "level": 1,
+   "parent": "REQ-SYS-001",
+   "text": "DELETE permanently removes a row; Closed remains readable, reportable and reopenable. Concurrent deletion cannot resurrect a record.",
+   "allocated_to": [
+    "comp.service",
+    "comp.controller"
+   ],
+   "rationale": "ADR-0006 and contracts C2-C4 clarify spec:37, 39."
+  },
+  {
    "id": "REQ-DATA-001",
    "level": 1,
    "parent": "REQ-SYS-002",
-   "text": "A created inquiry is persisted durably and appears in the list immediately after creation.",
+   "text": "Committed inquiries round-trip through fresh SQLite contexts, retain UTC instants and are readable by ID and through eligible list pages.",
    "allocated_to": [
     "comp.dbcontext",
     "comp.db"
    ],
    "rationale": "Directly addresses the troubleshooting scenario (spec:88)."
+  },
+  {
+   "id": "REQ-DATA-002",
+   "level": 1,
+   "parent": "REQ-SYS-002",
+   "text": "The SQL Server script executes matching DDL, at least five samples, and correct last-seven-days, status-count and duplicate-email queries.",
+   "allocated_to": [
+    "sub.data"
+   ],
+   "rationale": "Previously missing model coverage of mandatory spec:53-59; contract C8 requires actual SQL Server evidence."
+  },
+  {
+   "id": "REQ-DATA-003",
+   "level": 1,
+   "parent": "REQ-SYS-002",
+   "text": "Startup applies real SQLite migrations before serving; restart preserves data and migration failure is fatal, not an empty-store fallback.",
+   "allocated_to": [
+    "comp.dbcontext",
+    "comp.db"
+   ],
+   "rationale": "ADR-0003 startup promise and contract C8."
   },
   {
    "id": "REQ-CRM-001",
@@ -620,7 +663,7 @@ window.SYSTEM_MODEL = {
    "id": "REQ-CRM-002",
    "level": 1,
    "parent": "REQ-SYS-003",
-   "text": "A failed CRM sync is retried with exponential backoff before being recorded as failed.",
+   "text": "Only transient CRM failures are retried with exponential backoff, stopping on success, permanent failure or retry exhaustion (contract C6).",
    "allocated_to": [
     "comp.crmclient"
    ],
@@ -630,58 +673,69 @@ window.SYSTEM_MODEL = {
    "id": "REQ-CRM-003",
    "level": 1,
    "parent": "REQ-SYS-004",
-   "text": "Every CRM sync attempt is logged with its outcome, with email and phone redacted.",
+   "text": "Every started CRM attempt and terminal sync outcome is logged with safe inquiry/attempt metadata and no visitor payload or raw exception.",
    "allocated_to": [
     "comp.crmlog",
     "comp.crmclient"
    ],
-   "rationale": "Log the attempt without exposing sensitive data (spec:78-80)."
+   "rationale": "Log attempts without sensitive data (spec:78-80); contract C6 covers all sink channels."
+  },
+  {
+   "id": "REQ-CRM-004",
+   "level": 1,
+   "parent": "REQ-SYS-003",
+   "text": "CRM attempts and total execution have cooperative time budgets; caller cancellation stops attempts/backoff and cannot remove a committed inquiry.",
+   "allocated_to": [
+    "comp.crmclient",
+    "comp.service"
+   ],
+   "rationale": "Makes the planned timeout/cancellation boundary explicit without promising forcible termination or durable delivery; C5-C6."
   }
  ],
  "verifications": [
   {
    "id": "VER-SYS-001",
    "level": 0,
-   "method": "demonstration",
-   "name": "End-to-end triage walkthrough",
+   "method": "test",
+   "name": "Integrated triage and browser acceptance",
    "verifies": [
     "REQ-SYS-001"
    ],
    "status": "planned",
-   "procedure": "Open the dashboard, filter by status, change an inquiry's status, and confirm the change is reflected."
+   "procedure": "Run mapped IT-UI/IT-HOST cases in docs/testing/frontend-and-sql-cases.md plus MAN-UI browser triage; component tests alone do not prove real mounting."
   },
   {
    "id": "VER-SYS-002",
    "level": 0,
    "method": "test",
-   "name": "Create-then-list persistence",
+   "name": "Commit and read-after-create boundaries",
    "verifies": [
     "REQ-SYS-002"
    ],
    "status": "planned",
-   "procedure": "POST an inquiry, then GET the list and assert it appears with the returned id."
+   "procedure": "Backend IT-API/IT-APP cases: POST then independent GET/list, definite failed write without CRM, commit visibility and repeated submissions. See docs/testing/backend-cases.md."
   },
   {
    "id": "VER-SYS-003",
    "level": 0,
-   "method": "analysis",
-   "name": "CRM-failure isolation review",
+   "method": "test",
+   "name": "CRM-failure isolation",
    "verifies": [
     "REQ-SYS-003"
    ],
    "status": "planned",
-   "procedure": "Trace the create path and show a CRM failure is caught after persistence and cannot roll back the inquiry."
+   "procedure": "Backend IT-APP/IT-API: force CRM failure/cancellation only after independently observed commit; retain the row and created response where the connection remains usable."
   },
   {
    "id": "VER-SYS-004",
    "level": 0,
-   "method": "inspection",
-   "name": "Log redaction inspection",
+   "method": "test",
+   "name": "Configured log sink privacy",
    "verifies": [
     "REQ-SYS-004"
    ],
    "status": "planned",
-   "procedure": "Trigger a sync and inspect log output; confirm no email or phone value is present."
+   "procedure": "Backend UT-CRM and IT-API: inject sensitive field/exception sentinels and inspect rendered logs, structured state, scopes and exceptions through configured sinks, including telemetry."
   },
   {
    "id": "VER-SYS-005",
@@ -692,139 +746,194 @@ window.SYSTEM_MODEL = {
     "REQ-SYS-005"
    ],
    "status": "planned",
-   "procedure": "Assert 400 on invalid input and 404 on a missing record, each with a ProblemDetails body."
+   "procedure": "Backend IT-API: validation/binding/resource/routing/media-type errors and sanitized 500s in Development and Production; inspect ProblemDetails without pinning framework wording."
   },
   {
    "id": "VER-UI-001",
    "level": 1,
-   "method": "demonstration",
-   "name": "Dashboard behaviour walkthrough",
+   "method": "test",
+   "name": "Dashboard behavior",
    "verifies": [
     "REQ-UI-001"
    ],
    "status": "planned",
-   "procedure": "Exercise list, filter, detail, and status update; confirm success and error messages render."
+   "procedure": "Frontend IT-UI component integration: list/filter/page/detail/status and clear feedback. Supplement with MAN-UI browser walkthroughs."
+  },
+  {
+   "id": "VER-UI-002",
+   "level": 1,
+   "method": "test",
+   "name": "UI async boundaries and actual host assets",
+   "verifies": [
+    "REQ-UI-002"
+   ],
+   "status": "planned",
+   "procedure": "Frontend UT-UI, IT-UI and IT-HOST: controlled stale responses, recovery, safe text, keyboard/focus/live regions and real compiled Razor assets. Browser checks cover actual mounting/layout."
   },
   {
    "id": "VER-API-001",
    "level": 1,
    "method": "test",
-   "name": "Endpoint coverage",
+   "name": "Endpoint workflows",
    "verifies": [
     "REQ-API-001"
    ],
    "status": "planned",
-   "procedure": "One test per endpoint hitting the happy path."
+   "procedure": "Backend IT-API: all five endpoints through the real HTTP pipeline, including Location/readback, response DTOs, updates and permanent deletion."
   },
   {
    "id": "VER-API-002",
    "level": 1,
    "method": "test",
-   "name": "Validation rejects bad input",
+   "name": "Validation and wire-input boundaries",
    "verifies": [
     "REQ-API-002"
    ],
    "status": "planned",
-   "procedure": "POST with a missing required field and with a malformed email; assert 400 + details each time."
+   "procedure": "Backend UT-VAL rules plus IT-API representative HTTP binding: missing/blank/length/email/type errors, optional fields and ignored overposting; invalid requests cause no write or sync."
   },
   {
    "id": "VER-API-003",
    "level": 1,
    "method": "test",
-   "name": "Missing record returns 404",
+   "name": "Missing resources and deletion races",
    "verifies": [
     "REQ-API-003"
    ],
    "status": "planned",
-   "procedure": "GET/PUT/DELETE an unknown id; assert 404 ProblemDetails."
+   "procedure": "Backend IT-API: GET/PUT/DELETE unknown IDs, invalid route IDs, second DELETE, validation-before-lookup and controlled concurrent deletion return contract C3 errors."
   },
   {
    "id": "VER-API-004",
    "level": 1,
    "method": "test",
-   "name": "Pagination and sorting",
+   "name": "Filtered deterministic pagination",
    "verifies": [
     "REQ-API-004"
    ],
    "status": "planned",
-   "procedure": "Seed several inquiries; assert page size and sort order are honoured."
+   "procedure": "Backend IT-APP/IT-API: mixed statuses/tied dates, both sort directions, exact page and filtered total, empty/past-end pages and invalid/overflowing inputs."
   },
   {
    "id": "VER-API-005",
    "level": 1,
-   "method": "inspection",
-   "name": "Swagger documents all endpoints",
+   "method": "test",
+   "name": "OpenAPI contract and Swagger exercise",
    "verifies": [
     "REQ-API-005"
    ],
    "status": "planned",
-   "procedure": "Open Swagger UI; confirm every endpoint is documented and create/update is executable."
+   "procedure": "Backend IT-API inspects generated OpenAPI operations, DTO/status/page shapes and responses; manually create/update through Swagger. Avoid a whole-document snapshot."
   },
   {
    "id": "VER-APP-001",
    "level": 1,
    "method": "test",
-   "name": "Defaults and timestamps",
+   "name": "Server-owned status and UTC timestamps",
    "verifies": [
     "REQ-APP-001"
    ],
    "status": "planned",
-   "procedure": "Create an inquiry -> Status=New and CreatedDate==UpdatedDate; update it -> UpdatedDate advances. Candidate for the required minimum test."
+   "procedure": "Backend IT-APP/IT-API: fixed-time create, overposting isolation, later actual update, no-op, frozen/backward clock and fresh-context UTC readback."
   },
   {
    "id": "VER-APP-002",
    "level": 1,
    "method": "test",
-   "name": "Status value validation",
+   "name": "Free-form status and explicit validity",
    "verifies": [
     "REQ-APP-002"
    ],
    "status": "planned",
-   "procedure": "Update to a valid status (any order) succeeds; an unknown value is rejected."
+   "procedure": "Backend UT-VAL/IT-APP/IT-API: corrections both ways including reopening; reject omitted/null/numeric/composite/unknown wire values and invalid internal enums without mutation."
+  },
+  {
+   "id": "VER-APP-003",
+   "level": 1,
+   "method": "test",
+   "name": "Hard delete versus retained Closed",
+   "verifies": [
+    "REQ-APP-003"
+   ],
+   "status": "planned",
+   "procedure": "Backend IT-APP/IT-API: deleted rows disappear from fresh reads/counts, repeat delete is 404, Closed remains queryable/reopenable, deletion races never resurrect rows."
   },
   {
    "id": "VER-DATA-001",
    "level": 1,
    "method": "test",
-   "name": "Persistence round-trip",
+   "name": "SQLite persistence round-trip",
    "verifies": [
     "REQ-DATA-001"
    ],
    "status": "planned",
-   "procedure": "Save and reload an inquiry via EF Core; assert fields round-trip."
+   "procedure": "Backend IT-DATA and create/read IT-API: real migrations/provider, fresh-context Unicode/null/status/UTC round-trip and no false success from tracked entities."
+  },
+  {
+   "id": "VER-DATA-002",
+   "level": 1,
+   "method": "test",
+   "name": "SQL Server DDL and report execution",
+   "verifies": [
+    "REQ-DATA-002"
+   ],
+   "status": "planned",
+   "procedure": "IT-SQL in docs/testing/frontend-and-sql-cases.md: execute shipped script/query bodies on disposable SQL Server; assert schema/samples, fixed seven-day cutoffs, status totals and normalized duplicate groups. Missing engine blocks evidence."
+  },
+  {
+   "id": "VER-DATA-003",
+   "level": 1,
+   "method": "test",
+   "name": "Startup migrations and durable restart",
+   "verifies": [
+    "REQ-DATA-003"
+   ],
+   "status": "planned",
+   "procedure": "Backend IT-DATA: boot on an empty temporary SQLite file, create rows, restart against the same file, and force fatal migration failure without fallback."
   },
   {
    "id": "VER-CRM-001",
    "level": 1,
    "method": "test",
-   "name": "Create survives CRM failure",
+   "name": "Creation survives post-commit CRM failure",
    "verifies": [
     "REQ-CRM-001"
    ],
    "status": "planned",
-   "procedure": "Force ICrmClient to throw; assert create still returns success and the inquiry is persisted. Candidate for the required minimum test."
+   "procedure": "Backend IT-APP/IT-API: injected transient/permanent/unexpected CRM exceptions cannot remove an independently committed row or turn a connected create into a CRM error."
   },
   {
    "id": "VER-CRM-002",
    "level": 1,
    "method": "test",
-   "name": "Sync retries then succeeds",
+   "name": "Transient retry and exhaustion",
    "verifies": [
     "REQ-CRM-002"
    ],
    "status": "planned",
-   "procedure": "A client that fails twice then succeeds is retried and recorded as success."
+   "procedure": "Backend UT-CRM: real Polly pipeline with controlled attempts/time; transient failure then success, maximum four attempts, 100/200/400ms backoff and no permanent-error retry."
   },
   {
    "id": "VER-CRM-003",
    "level": 1,
-   "method": "inspection",
-   "name": "Sync log redaction",
+   "method": "test",
+   "name": "Safe attempt and outcome logging",
    "verifies": [
     "REQ-CRM-003"
    ],
    "status": "planned",
-   "procedure": "Assert a sync log entry contains inquiry id + outcome but no email or phone."
+   "procedure": "Backend UT-CRM/IT-API: started attempts and final outcomes contain persisted ID and safe metadata, never sensitive payloads or raw exceptions on any sink channel."
+  },
+  {
+   "id": "VER-CRM-004",
+   "level": 1,
+   "method": "test",
+   "name": "Bounded timeout and cancellation",
+   "verifies": [
+    "REQ-CRM-004"
+   ],
+   "status": "planned",
+   "procedure": "Backend UT-CRM and IT-APP: attempt timeout, outer total budget, cancellation before/during attempts or backoff, no subsequent retries, and preserved post-commit data."
   }
  ],
  "flows": [
@@ -832,14 +941,14 @@ window.SYSTEM_MODEL = {
    "id": "flow.submit",
    "name": "Inquiry intake and CRM sync",
    "trigger": "A website visitor submits the course inquiry form.",
-   "description": "The path that pays for the system: capture the inquiry durably first, then best-effort sync to the CRM. The order matters - persistence before sync is what makes REQ-SYS-002 and REQ-SYS-003 hold at once.",
+   "description": "Commit first, then await bounded best-effort CRM in the same request. CRM failure cannot undo storage; transport loss can hide a commit and a crash can lose the sync. No exactly-once delivery (C5).",
    "steps": [
     {
      "n": 1,
      "from": "actor.visitor",
      "to": "comp.controller",
      "action": "POST /api/inquiries",
-     "mechanism": "JSON body bound to a Create DTO; DataAnnotations validate required fields and email format."
+     "mechanism": "JSON bound to a create-only DTO; required fields, lengths and email checked. Client-supplied server-owned/unknown fields are ignored (C1)."
     },
     {
      "n": 2,
@@ -854,46 +963,44 @@ window.SYSTEM_MODEL = {
      "from": "comp.service",
      "to": "comp.dbcontext",
      "action": "Insert inquiry",
-     "mechanism": "Service sets Status=New and CreatedDate=UpdatedDate=UtcNow, then one SaveChanges."
+     "mechanism": "Service forces New and samples UTC once for both timestamps, then awaits SaveChangesAsync with the request token."
     },
     {
      "n": 4,
      "from": "comp.dbcontext",
      "to": "comp.db",
-     "action": "SQL INSERT",
-     "mechanism": "EF Core -> SQLite. The inquiry is now durable and will appear in the list."
+     "action": "Commit SQL INSERT",
+     "mechanism": "SQLite commit completes before CRM; an independent connection can read the row. A failed/disconnected response is not proof the write did not commit."
     },
     {
      "n": 5,
      "from": "comp.service",
      "to": "comp.crmclient",
-     "action": "SyncInquiryAsync(inquiry)",
-     "async": true,
-     "condition": "inquiry persisted",
-     "mechanism": "Only after the row is committed. A failure here is caught by the service, not surfaced to the caller."
+     "action": "await SyncInquiryAsync(inquiry, ct)",
+     "condition": "inquiry committed; cancellation may skip CRM",
+     "mechanism": "Same request, not fire-and-forget. Catch CRM failures/cancellation only after the durable write; never roll back or repeat the insert."
     },
     {
      "n": 6,
      "from": "comp.crmclient",
      "to": "ext.crm",
-     "action": "Push inquiry (simulated)",
-     "mechanism": "Timeout + up to 3 retries with exponential backoff (Polly)."
+     "action": "Push inquiry (in-process simulation)",
+     "mechanism": "Real Polly: transient-only retry, at most 4 attempts, 100/200/400ms delays, 500ms attempt and 2s total cooperative timeouts (C6)."
     },
     {
      "n": 7,
      "from": "comp.crmclient",
      "to": "comp.crmlog",
-     "action": "Record outcome",
-     "async": true,
-     "mechanism": "Structured log: inquiry id + success/failure; email and phone redacted."
+     "action": "Record safe outcome",
+     "mechanism": "Persisted inquiry id + attempt/outcome metadata; no visitor fields, raw exceptions or unsafe telemetry."
     },
     {
      "n": 8,
      "from": "comp.controller",
      "to": "actor.visitor",
-     "action": "201 Created + inquiry",
-     "condition": "inquiry persisted",
-     "mechanism": "Returns the created inquiry (id, Status=New). The CRM outcome does not gate this response."
+     "action": "201 + Location + InquiryResponse",
+     "condition": "inquiry committed and response connection usable",
+     "mechanism": "CRM outcome does not change the success response, but awaiting it adds bounded latency. A disconnected caller may never receive confirmation."
     }
    ],
    "failure_modes": [
@@ -903,14 +1010,24 @@ window.SYSTEM_MODEL = {
      "detected_by": "VER-API-002"
     },
     {
-     "when": "The database write fails",
-     "then": "Create returns an error; no partial inquiry is left because it is a single SaveChanges.",
+     "when": "Definite database failure before commit",
+     "then": "Sanitized 500 if response is possible; no partial row or CRM attempt.",
      "detected_by": "VER-SYS-002"
     },
     {
-     "when": "CRM sync fails after all retries",
-     "then": "The inquiry stays created and persisted; the failure is logged; no error reaches the visitor.",
+     "when": "CRM sync fails after commit",
+     "then": "Row remains durable; safe outcome logged; connected caller still receives 201.",
      "detected_by": "VER-CRM-001"
+    },
+    {
+     "when": "Cancellation before insert or during post-commit CRM",
+     "then": "Before insert: no row/sync. After commit: stop CRM cooperatively, preserve row. Transport response is not guaranteed.",
+     "detected_by": "VER-CRM-004"
+    },
+    {
+     "when": "Response lost or process stops after commit",
+     "then": "Caller may be uncertain and repeated POST may duplicate intake; CRM delivery can be lost without an outbox.",
+     "detected_by": "VER-SYS-002"
     }
    ]
   },
@@ -925,7 +1042,7 @@ window.SYSTEM_MODEL = {
      "from": "actor.staff",
      "to": "comp.razor",
      "action": "GET dashboard",
-     "mechanism": "Razor renders the shell and the island mount point."
+     "mechanism": "Razor renders layout, loading/no-JavaScript guidance and a single island mount point."
     },
     {
      "n": 2,
@@ -953,21 +1070,21 @@ window.SYSTEM_MODEL = {
      "from": "comp.service",
      "to": "comp.dbcontext",
      "action": "Query",
-     "mechanism": "Single IQueryable: Where(status) + OrderBy + Skip/Take, executed once against SQLite."
+     "mechanism": "Filter before count and page; CreatedDate then Id ordering. Count and page are separate SQLite queries, not a concurrent snapshot (C4)."
     },
     {
      "n": 6,
      "from": "comp.react",
      "to": "comp.controller",
      "action": "PUT /api/inquiries/{id}/status",
-     "mechanism": "Body validated as a known status enum value."
+     "mechanism": "Required named status validated explicitly; reject omitted/null/numeric/composite values (C2)."
     },
     {
      "n": 7,
      "from": "comp.controller",
      "to": "comp.service",
      "action": "UpdateStatus(id, status)",
-     "mechanism": "404 if the id is unknown; otherwise sets Status and advances UpdatedDate."
+     "mechanism": "404 if missing/deleted during write; otherwise set status and UTC update time only for an actual change. Same-status PUT is a no-op; last committed write wins."
     },
     {
      "n": 8,
@@ -975,7 +1092,7 @@ window.SYSTEM_MODEL = {
      "to": "comp.react",
      "action": "200 + updated inquiry",
      "condition": "id found and status valid",
-     "mechanism": "React shows a success message and refreshes the row."
+     "mechanism": "Show saved feedback and refresh filter/page/detail state. A row may leave the filter; reconcile empty last pages and ignore stale responses. A refresh failure is not a failed save."
     }
    ],
    "failure_modes": [
@@ -985,9 +1102,14 @@ window.SYSTEM_MODEL = {
      "detected_by": "VER-API-003"
     },
     {
-     "when": "Status value is not a known enum",
-     "then": "400; the inquiry is left unchanged.",
+     "when": "Status input is missing, numeric, composite or unknown",
+     "then": "400 before lookup; row remains unchanged.",
      "detected_by": "VER-APP-002"
+    },
+    {
+     "when": "Older list/detail response arrives last",
+     "then": "Ignore stale data and preserve the newer selection; failures leave recoverable UI state.",
+     "detected_by": "VER-UI-002"
     }
    ]
   }
@@ -997,7 +1119,7 @@ window.SYSTEM_MODEL = {
    "id": "ann.greenfield",
    "target": "sys.dashboard",
    "kind": "note",
-   "text": "Target design - no code exists yet. This model captures the plan agreed in the planning session on 2026-09-16. Verifications are all 'planned' for the same reason.",
+   "text": "Target design only: no application/test code. Contracts in docs/architecture/contracts.md and TDD/cases in docs/testing/. All verifications are planned; coverage is not passing evidence.",
    "author": "Planning session 2026-09-16"
   },
   {
@@ -1025,22 +1147,29 @@ window.SYSTEM_MODEL = {
    "id": "ann.log",
    "target": "comp.crmlog",
    "kind": "decision",
-   "text": "Sync attempts are recorded via structured logs (built-in ILogger) with email/phone redacted - not a database table. Sufficient for 'log that a sync was attempted' without extra schema.",
+   "text": "Operational attempt/outcome logs use only safe metadata, omitting visitor fields and raw exceptions across state/scopes/telemetry. Not a durable business audit trail; see C6.",
    "author": "Planning session 2026-09-16"
   },
   {
    "id": "ann.noauth",
    "target": "comp.controller",
    "kind": "note",
-   "text": "No authentication is implemented; the staff endpoints are open. Access control is discussed in written-answers.md (Security). A real deployment would gate these endpoints.",
+   "text": "No authentication: staff/visitor labels and same origin do not restrict access. Local synthetic-data demo only. Production auth/retention/CSRF strategy remains out of scope (C7).",
    "author": "Planning session 2026-09-16"
   },
   {
    "id": "ann.create-ui",
    "target": "comp.react",
-   "kind": "question",
-   "text": "Open: does the React island also handle create, or is create left to the public form + Swagger? Current plan: the island covers list/filter/detail/status; create via the API/Swagger.",
-   "author": "Planning session 2026-09-16"
+   "kind": "decision",
+   "text": "Resolved: island = list/filter/page/detail/status; create/delete via API/Swagger. Public visitor form is external. ADR-0009, C7.",
+   "author": "Boundary review 2026-09-16"
+  },
+  {
+   "id": "ann.tdd",
+   "target": "sys.dashboard",
+   "kind": "decision",
+   "text": "Every committed behavior follows red-green-refactor. Unit and real-provider/HTTP/component/SQL integrations are specified in docs/testing/tdd-plan.md and case catalogs; browser checks supplement automation. SQL Server is required for full script evidence, not runtime.",
+   "author": "Boundary review 2026-09-16"
   }
  ],
  "index": {
@@ -1051,6 +1180,7 @@ window.SYSTEM_MODEL = {
    "sub.api": [
     "REQ-SYS-001",
     "REQ-SYS-002",
+    "REQ-SYS-004",
     "REQ-SYS-005"
    ],
    "sub.app": [
@@ -1060,24 +1190,28 @@ window.SYSTEM_MODEL = {
     "REQ-SYS-004"
    ],
    "sub.data": [
-    "REQ-SYS-002"
+    "REQ-SYS-002",
+    "REQ-DATA-002"
    ],
    "sub.crm": [
     "REQ-SYS-003",
     "REQ-SYS-004"
    ],
    "comp.react": [
-    "REQ-UI-001"
+    "REQ-UI-001",
+    "REQ-UI-002"
    ],
    "comp.razor": [
-    "REQ-UI-001"
+    "REQ-UI-001",
+    "REQ-UI-002"
    ],
    "comp.controller": [
     "REQ-API-001",
     "REQ-API-002",
     "REQ-API-003",
     "REQ-API-004",
-    "REQ-API-005"
+    "REQ-API-005",
+    "REQ-APP-003"
    ],
    "comp.validation": [
     "REQ-API-002",
@@ -1090,21 +1224,26 @@ window.SYSTEM_MODEL = {
     "REQ-API-004",
     "REQ-APP-001",
     "REQ-APP-002",
-    "REQ-CRM-001"
+    "REQ-APP-003",
+    "REQ-CRM-001",
+    "REQ-CRM-004"
    ],
    "comp.openapi": [
     "REQ-API-005"
    ],
    "comp.dbcontext": [
-    "REQ-DATA-001"
+    "REQ-DATA-001",
+    "REQ-DATA-003"
    ],
    "comp.db": [
-    "REQ-DATA-001"
+    "REQ-DATA-001",
+    "REQ-DATA-003"
    ],
    "comp.crmclient": [
     "REQ-CRM-001",
     "REQ-CRM-002",
-    "REQ-CRM-003"
+    "REQ-CRM-003",
+    "REQ-CRM-004"
    ],
    "comp.crmlog": [
     "REQ-CRM-003"
@@ -1129,6 +1268,9 @@ window.SYSTEM_MODEL = {
    "REQ-UI-001": [
     "VER-UI-001"
    ],
+   "REQ-UI-002": [
+    "VER-UI-002"
+   ],
    "REQ-API-001": [
     "VER-API-001"
    ],
@@ -1150,8 +1292,17 @@ window.SYSTEM_MODEL = {
    "REQ-APP-002": [
     "VER-APP-002"
    ],
+   "REQ-APP-003": [
+    "VER-APP-003"
+   ],
    "REQ-DATA-001": [
     "VER-DATA-001"
+   ],
+   "REQ-DATA-002": [
+    "VER-DATA-002"
+   ],
+   "REQ-DATA-003": [
+    "VER-DATA-003"
    ],
    "REQ-CRM-001": [
     "VER-CRM-001"
@@ -1161,6 +1312,9 @@ window.SYSTEM_MODEL = {
    ],
    "REQ-CRM-003": [
     "VER-CRM-003"
+   ],
+   "REQ-CRM-004": [
+    "VER-CRM-004"
    ]
   },
   "flows_for_node": {
@@ -1258,6 +1412,7 @@ window.SYSTEM_MODEL = {
    "REQ-SYS-004": "traceability.html",
    "REQ-SYS-005": "traceability.html",
    "REQ-UI-001": "traceability.html",
+   "REQ-UI-002": "traceability.html",
    "REQ-API-001": "traceability.html",
    "REQ-API-002": "traceability.html",
    "REQ-API-003": "traceability.html",
@@ -1265,16 +1420,21 @@ window.SYSTEM_MODEL = {
    "REQ-API-005": "traceability.html",
    "REQ-APP-001": "traceability.html",
    "REQ-APP-002": "traceability.html",
+   "REQ-APP-003": "traceability.html",
    "REQ-DATA-001": "traceability.html",
+   "REQ-DATA-002": "traceability.html",
+   "REQ-DATA-003": "traceability.html",
    "REQ-CRM-001": "traceability.html",
    "REQ-CRM-002": "traceability.html",
    "REQ-CRM-003": "traceability.html",
+   "REQ-CRM-004": "traceability.html",
    "VER-SYS-001": "traceability.html",
    "VER-SYS-002": "traceability.html",
    "VER-SYS-003": "traceability.html",
    "VER-SYS-004": "traceability.html",
    "VER-SYS-005": "traceability.html",
    "VER-UI-001": "traceability.html",
+   "VER-UI-002": "traceability.html",
    "VER-API-001": "traceability.html",
    "VER-API-002": "traceability.html",
    "VER-API-003": "traceability.html",
@@ -1282,10 +1442,14 @@ window.SYSTEM_MODEL = {
    "VER-API-005": "traceability.html",
    "VER-APP-001": "traceability.html",
    "VER-APP-002": "traceability.html",
+   "VER-APP-003": "traceability.html",
    "VER-DATA-001": "traceability.html",
+   "VER-DATA-002": "traceability.html",
+   "VER-DATA-003": "traceability.html",
    "VER-CRM-001": "traceability.html",
    "VER-CRM-002": "traceability.html",
    "VER-CRM-003": "traceability.html",
+   "VER-CRM-004": "traceability.html",
    "flow.submit": "flow--flow-submit.html",
    "flow.triage": "flow--flow-triage.html"
   }

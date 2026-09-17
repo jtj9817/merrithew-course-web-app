@@ -55,7 +55,16 @@ export default function App() {
   }, [colorblindMode])
 
   useEffect(() => {
-    setAppbarTarget(document.getElementById('shell-appbar-colorblind'))
+    let target = document.getElementById('shell-appbar-colorblind')
+    if (!target) {
+      const badgeContainer = document.querySelector('.shell-appbar-badge')
+      if (badgeContainer) {
+        target = document.createElement('div')
+        target.id = 'shell-appbar-colorblind'
+        badgeContainer.prepend(target)
+      }
+    }
+    setAppbarTarget(target)
   }, [])
 
   useEffect(() => {

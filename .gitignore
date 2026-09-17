@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 *.swp
 .claude/settings.json
 .mcp.json
+
+# Local inquiry store and SQLite journals
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal

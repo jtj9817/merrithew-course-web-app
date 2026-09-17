@@ -3,6 +3,7 @@ import { DetailPanel } from './components/DetailPanel'
 import { InquiryTable } from './components/InquiryTable'
 import { LiveRegions } from './components/LiveRegions'
 import { Pagination } from './components/Pagination'
+import { ScenarioSwitcher } from './components/ScenarioSwitcher'
 import { Toolbar } from './components/Toolbar'
 import { fetchInquiry, fetchInquiryPage, putInquiryStatus } from './lib/api'
 import { OUTCOME_MESSAGES, messageFor } from './lib/fetchOutcome'
@@ -58,6 +59,13 @@ export default function App() {
   const refreshList = useCallback((reason: RefreshReason) => {
     refreshReasonRef.current = reason
     setRefreshKey((key) => key + 1)
+  }, [])
+
+  // Dev-only: after a scenario is seeded or cleared, return to a clean view of
+  // the new dataset (all statuses, first page) and refetch.
+  const handleScenarioChanged = useCallback(() => {
+    setSort(undefined)
+    setRequest({ filter: 'All' })
   }, [])
 
   useEffect(() => {
@@ -204,6 +212,8 @@ export default function App() {
 
   return (
     <div className="island">
+      <ScenarioSwitcher onChanged={handleScenarioChanged} />
+
       <Toolbar
         filter={request.filter}
         sort={sort}

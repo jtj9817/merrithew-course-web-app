@@ -27,6 +27,10 @@
     </noscript>
 </div>
 
+@if (Model.ScenarioToolsEnabled)
+{
+    <script>window.__scenarioTools = true;</script>
+}
 @if (Model.EntryScript is not null)
 {
     <script type="module" src="/app/@Model.EntryScript"></script>

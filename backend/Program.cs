@@ -77,7 +77,7 @@ app.MapControllers();
 // Enabled automatically in Development, or in any environment by explicitly
 // setting DevTools:ScenarioSeeding=true — the endpoints wipe and rewrite data,
 // so they must stay off in production unless deliberately opted in.
-if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("DevTools:ScenarioSeeding"))
+if (DevToolsOptions.ScenarioSeedingEnabled(app.Environment, app.Configuration))
 {
     app.MapScenarioEndpoints();
 }

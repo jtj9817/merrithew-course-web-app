@@ -3,14 +3,31 @@
 @{
     ViewData["Title"] = "Course inquiry dashboard";
 }
-<header class="shell-header">
-    <p class="shell-eyebrow">Merrithew staff tool</p>
-    <h1>Course inquiry dashboard</h1>
+<header class="shell-appbar">
+    <div class="shell-appbar-inner">
+        <div class="shell-brand">
+            <svg class="brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+                <rect width="32" height="32" rx="6" fill="#9B1B30"/>
+                <path d="M7 23V9h3.6l3.8 8.2L18.2 9H22v14h-3V13.8L15.2 21h-1.6L9.9 13.8V23H7z" fill="#FFFFFF"/>
+            </svg>
+            <div class="brand-text">
+                <span class="brand-name">MERRITHEW</span>
+                <span class="brand-tagline">Leaders in Mindful Movement</span>
+            </div>
+        </div>
+        <div class="shell-appbar-badge">
+            <span class="appbar-chip">Staff Triage</span>
+        </div>
+    </div>
+</header>
+<div class="shell-header">
+    <p class="shell-eyebrow">Staff Triage Queue</p>
+    <h1>Course Inquiry Dashboard</h1>
     <p class="shell-lede">
         Triage incoming course inquiries: filter the queue, review details, and update
         statuses. Creating and deleting inquiries happens through the API, not on this page.
     </p>
-</header>
+</div>
 
 <div id="dashboard-root">
     <section class="shell-loading" aria-busy="true">

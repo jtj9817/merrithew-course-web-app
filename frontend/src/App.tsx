@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { CrmSimulationControl } from './components/CrmSimulationControl'
 import { DetailPanel } from './components/DetailPanel'
 import { InquiryTable } from './components/InquiryTable'
-import { LiveRegions } from './components/LiveRegions'
+import { LiveRegions, type ToastNotification } from './components/LiveRegions'
 import { Pagination } from './components/Pagination'
 import { ScenarioSwitcher } from './components/ScenarioSwitcher'
 import { Toolbar } from './components/Toolbar'
@@ -38,6 +38,7 @@ export default function App() {
   const [assertive, setAssertive] = useState('')
   const [detail, setDetail] = useState<DetailState>({ kind: 'closed' })
   const [mutatingIds, setMutatingIds] = useState<number[]>([])
+  const [toast, setToast] = useState<ToastNotification | null>(null)
 
   const listSeqRef = useRef(0)
   const detailSeqRef = useRef(0)
@@ -53,7 +54,11 @@ export default function App() {
   /** C7: every panel close — user-initiated or programmatic — returns focus to its opener. */
   const focusDetailOpener = useCallback((state: DetailState) => {
     if (state.kind !== 'closed' && state.opener.isConnected) {
-      state.opener.focus()
+      const opener = state.opener
+      opener.focus()
+      requestAnimationFrame(() => {
+        opener.focus()
+      })
     }
   }, [])
 
@@ -102,6 +107,7 @@ export default function App() {
       if (wasSaveRefresh) {
         // The write itself succeeded; only the refresh failed (C7 wording).
         setPolite(OUTCOME_MESSAGES.savedRefreshFailed)
+        setToast({ id: Date.now(), variant: 'info' })
       }
       setAssertive(messageFor(outcome))
       applyPhase(phaseRef.current.kind === 'ready' ? phaseRef.current : { kind: 'error' })
@@ -181,9 +187,12 @@ export default function App() {
               : current,
           )
           setPolite(OUTCOME_MESSAGES.saved)
+          setToast({ id: Date.now(), variant: 'info' })
           refreshList('save')
         } else if (outcome.kind === 'gone') {
-          setAssertive(messageFor(outcome))
+          const message = messageFor(outcome)
+          setAssertive(message)
+          setToast({ id: Date.now(), variant: 'error' })
           const openDetail = detailRef.current
           if (openDetail.kind !== 'closed' && openDetail.id === id) {
             focusDetailOpener(openDetail)
@@ -193,9 +202,10 @@ export default function App() {
         } else {
           // Network/unparseable failures during an update get the mutation
           // wording, not the list-loading message.
-          setAssertive(
-            outcome.kind === 'generic' ? OUTCOME_MESSAGES.mutationFailure : messageFor(outcome),
-          )
+          const message =
+            outcome.kind === 'generic' ? OUTCOME_MESSAGES.mutationFailure : messageFor(outcome)
+          setAssertive(message)
+          setToast({ id: Date.now(), variant: 'error' })
         }
       } finally {
         setMutatingIds((current) => current.filter((rowId) => rowId !== id))
@@ -213,66 +223,78 @@ export default function App() {
     : null
   const rows = envelope?.items ?? []
 
+  const isDetailOpen = detail.kind !== 'closed'
+
   return (
     <div className="island">
-      <div className="dev-tools">
-        <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} />
-        <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} />
+      <div
+        className="island-content"
+        inert={isDetailOpen ? true : undefined}
+      >
+        <div className="dev-tools">
+          <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} />
+          <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} />
+        </div>
+
+        <Toolbar
+          filter={request.filter}
+          sort={sort}
+          totalCount={envelope?.totalCount ?? null}
+          onFilterChange={(filter) => setRequest((current) => applyFilterChange(current, filter))}
+          onSortChange={(nextSort) => {
+            setSort(nextSort)
+            setRequest((current) => ({ ...current, page: 1 }))
+          }}
+        />
+
+        {phase.kind === 'loading' && (
+          <p className="list-loading" aria-busy="true">
+            Loading inquiries…
+          </p>
+        )}
+
+        {phase.kind === 'error' && (
+          <div className="load-error">
+            <p className="load-error-message">{assertive}</p>
+            <button type="button" className="retry" onClick={() => refreshList('other')}>
+              Retry
+            </button>
+          </div>
+        )}
+
+        {phase.kind === 'ready' && rows.length === 0 && (
+          <p className="empty-message">
+            {request.filter === 'All'
+              ? 'No inquiries yet. New submissions appear here as staff review them.'
+              : 'No inquiries match this filter. Choose a different status or show all statuses.'}
+          </p>
+        )}
+
+        {phase.kind === 'ready' && rows.length > 0 && (
+          <InquiryTable
+            items={rows}
+            fetching={fetching}
+            mutatingIds={mutatingIds}
+            onOpenDetail={openDetail}
+            onApplyStatus={applyStatus}
+          />
+        )}
+
+        {phase.kind !== 'error' && (
+          <Pagination
+            page={displayPage}
+            lastPage={lastPage}
+            onNavigate={(page) => setRequest((current) => applyPageChange(current, page))}
+          />
+        )}
       </div>
 
-      <Toolbar
-        filter={request.filter}
-        sort={sort}
-        totalCount={envelope?.totalCount ?? null}
-        onFilterChange={(filter) => setRequest((current) => applyFilterChange(current, filter))}
-        onSortChange={(nextSort) => {
-          setSort(nextSort)
-          setRequest((current) => ({ ...current, page: 1 }))
-        }}
+      <LiveRegions
+        polite={polite}
+        assertive={assertive}
+        toast={toast}
+        onDismissToast={() => setToast(null)}
       />
-
-      <LiveRegions polite={polite} assertive={assertive} />
-
-      {phase.kind === 'loading' && (
-        <p className="list-loading" aria-busy="true">
-          Loading inquiries…
-        </p>
-      )}
-
-      {phase.kind === 'error' && (
-        <div className="load-error">
-          <p className="load-error-message">{assertive}</p>
-          <button type="button" className="retry" onClick={() => refreshList('other')}>
-            Retry
-          </button>
-        </div>
-      )}
-
-      {phase.kind === 'ready' && rows.length === 0 && (
-        <p className="empty-message">
-          {request.filter === 'All'
-            ? 'No inquiries yet. New submissions appear here as staff review them.'
-            : 'No inquiries match this filter. Choose a different status or show all statuses.'}
-        </p>
-      )}
-
-      {phase.kind === 'ready' && rows.length > 0 && (
-        <InquiryTable
-          items={rows}
-          fetching={fetching}
-          mutatingIds={mutatingIds}
-          onOpenDetail={openDetail}
-          onApplyStatus={applyStatus}
-        />
-      )}
-
-      {phase.kind !== 'error' && (
-        <Pagination
-          page={displayPage}
-          lastPage={lastPage}
-          onNavigate={(page) => setRequest((current) => applyPageChange(current, page))}
-        />
-      )}
 
       <DetailPanel detail={detail} onClose={closeDetail} />
     </div>

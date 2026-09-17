@@ -23,12 +23,12 @@ export function InquiryTable({
       <table className="inquiry-table" aria-busy={fetching || undefined}>
         <thead>
           <tr>
-            <th scope="col">Details</th>
-            <th scope="col">First name</th>
-            <th scope="col">Last name</th>
-            <th scope="col">Course</th>
-            <th scope="col">Status</th>
-            <th scope="col">Created</th>
+            <th scope="col" className="th-details">Details</th>
+            <th scope="col" className="th-name">First name</th>
+            <th scope="col" className="th-name">Last name</th>
+            <th scope="col" className="th-course">Course</th>
+            <th scope="col" className="th-status">Status</th>
+            <th scope="col" className="th-created">Created</th>
           </tr>
         </thead>
         <tbody>
@@ -66,9 +66,11 @@ function InquiryRow({ inquiry, mutating, onOpenDetail, onApplyStatus }: InquiryR
     }
   }, [inquiry.status, mutating])
 
+  const isModified = draft !== inquiry.status
+
   return (
     <tr>
-      <td>
+      <td className="cell-details">
         <button
           type="button"
           className="opener"
@@ -78,10 +80,10 @@ function InquiryRow({ inquiry, mutating, onOpenDetail, onApplyStatus }: InquiryR
           Details
         </button>
       </td>
-      <td>{inquiry.firstName}</td>
-      <td>{inquiry.lastName}</td>
-      <td>{inquiry.courseName}</td>
-      <td>
+      <td className="cell-name">{inquiry.firstName}</td>
+      <td className="cell-name">{inquiry.lastName}</td>
+      <td className="cell-course">{inquiry.courseName}</td>
+      <td className="cell-status">
         <div className="status-cell">
           <span className={`status-badge status-${inquiry.status.toLowerCase()}`}>
             {inquiry.status}
@@ -100,7 +102,8 @@ function InquiryRow({ inquiry, mutating, onOpenDetail, onApplyStatus }: InquiryR
           </select>
           <button
             type="button"
-            className="apply"
+            className={`apply${isModified ? ' apply--modified' : ''}`}
+            data-modified={isModified ? 'true' : 'false'}
             aria-label={`Apply for ${name}`}
             disabled={mutating}
             onClick={() => onApplyStatus(inquiry.id, draft)}
@@ -109,7 +112,7 @@ function InquiryRow({ inquiry, mutating, onOpenDetail, onApplyStatus }: InquiryR
           </button>
         </div>
       </td>
-      <td className="date-cell">{formatIsoDate(inquiry.createdDate)}</td>
+      <td className="cell-created date-cell">{formatIsoDate(inquiry.createdDate)}</td>
     </tr>
   )
 }

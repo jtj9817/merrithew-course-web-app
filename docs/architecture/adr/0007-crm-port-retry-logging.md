@@ -53,3 +53,20 @@ dead-letter.
 **Watch for:** if CRM delivery becomes business-critical, supersede this
 assessment decision with the [durable outbox design](../future/durable-crm-outbox.md):
 transactional intent, durable retries, dead-letter handling, and alerting.
+
+## Addendum — runtime outcome selection (2026-09-17)
+
+The simulation's outcome is now selectable at runtime, not only via test
+injection: a `CrmSimulationRuntime` executes one of six deterministic modes
+(`Success`, `TransientThenSuccess`, `AlwaysTransientFailure`, `PermanentFailure`,
+`Timeout`, `InternalCancellation`) inside the same Polly pipeline, configured
+through the `CrmSimulation` section or the development-only
+`/api/dev/crm-simulation` endpoints, and surfaced in the dashboard by a
+development-only control ([plan](../plans/crm-simulation-plan.md)). This changes
+no decision above: the mode runs inside the identical retry/timeout/logging
+envelope, settings snapshot per sync, the simulated boundary receives an explicit
+payload that no logging code accepts, results expose only inquiry id / mode /
+outcome / attempts, and `InternalCancellation` is isolated post-commit exactly
+like every other CRM failure. Delivery remains best-effort with no durable
+outbox; the [durable outbox design](../future/durable-crm-outbox.md) is still
+the supersession path.

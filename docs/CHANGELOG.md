@@ -16,12 +16,18 @@ tagged (it's a single assessment deliverable), so changes are grouped under
   `Timeout`, and `InternalCancellation`. The simulated external boundary now
   receives an explicit CRM payload; per-attempt settings are snapshotted per
   sync. Safe, non-PII sync results (inquiry id, mode, outcome, attempts) are
-  exposed for the upcoming dashboard demonstrator.
+  exposed for the dashboard demonstrator.
 - **CRM-originated cancellation isolated**: an `OperationCanceledException`
   thrown by the CRM itself can no longer escape inquiry creation after the
-  commit — the row and the `201` response are kept. The dashboard island
-  control for these modes is planned under
-  [Phase 10](../TODO.md) (see the [plan](plans/crm-simulation-plan.md)).
+  commit — the row and the `201` response are kept.
+- **Dashboard CRM demonstrator** (development-only): a dev control beside the
+  scenario switcher picks a behavior and runs one real inquiry through
+  `POST /api/inquiries`, reporting the sync outcome and attempt count from safe
+  metadata; demo inquiries appear in the normal queue.
+- **Automated coverage**: UT-CRM-011..017 (runtime modes through the real
+  pipeline, privacy) and IT-CRM-SIM-001..008 (endpoint contract, gating,
+  cancellation isolation, result readback) plus island component tests — see
+  the [plan](plans/crm-simulation-plan.md).
 
 ### Added — initial build (through September 17, 2026)
 

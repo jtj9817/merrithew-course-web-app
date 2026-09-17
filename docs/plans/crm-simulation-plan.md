@@ -1,6 +1,6 @@
 # Runtime CRM Simulation Demonstration — Phase 10 Plan
 
-- **Status:** in progress (runtime landed at `74eafc9`; tests, island control, and docs open)
+- **Status:** complete — runtime at `74eafc9`, coverage at `16478d2`, island control at `cb3cbf4`; six-mode browser walkthrough and docs done
 - **Scope:** expose the simulated CRM outcome (`Success`, `TransientThenSuccess`, `AlwaysTransientFailure`, `PermanentFailure`, `Timeout`, `InternalCancellation`) for selection at runtime — by configuration, by HTTP, and from the dashboard UI — without weakening any Part 4 invariant
 - **Related:** [ADR-0007](../architecture/adr/0007-crm-port-retry-logging.md), [contracts C5–C6](../architecture/contracts.md), [TODO Phase 10](../../TODO.md)
 
@@ -26,11 +26,14 @@ Phase 10 makes the outcome selectable outside tests while keeping every load-bea
 
 **Runtime smoke evidence** (Development host, real `POST /api/inquiries`): `TransientThenSuccess` → `201`, result `Success` after 3 attempts with 2 logged transient retries; `PermanentFailure` → `201`, result `Failed` after 1 attempt, row intact; `InternalCancellation` → `201`, result `Cancelled` after 1 attempt, row intact. Logs contained only inquiry id/attempt/outcome/error type.
 
-## 3. Remaining work
+## 3. Delivered follow-up work
+
+Everything below landed after the runtime commit, as planned.
 
 ### 3.1 Automated coverage (backend)
 
-Extend `tests/CourseInquiryDashboard.Tests/Unit/CrmPipelineTests.cs` with runtime-mode cases (production constructor, no injected script):
+Delivered as `CrmRuntimeSimulationTests` (a dedicated file; the legacy seam suite
+stays untouched) via a counting-runtime subclass:
 
 | Case | Mode | Assert |
 | --- | --- | --- |

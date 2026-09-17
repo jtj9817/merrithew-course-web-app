@@ -170,21 +170,24 @@ dashboard UI. The full design, boundaries, and evidence plan live in
 - [x] `InquiryService` isolates CRM-originated cancellation (not just caller cancellation), so no post-commit CRM outcome escapes `CreateAsync` — REQ-SYS-003, C5
 - [x] `/api/dev/crm-simulation` opt-in endpoints (`DevTools:CrmSimulation` or Development): mode catalog, runtime selection, and safe non-PII sync results — C6
 - [x] `appsettings.json` documents the `CrmSimulation` section with validated ranges (`ValidateDataAnnotations` + `ValidateOnStart`)
-- [ ] Write then pass `CrmPipelineTests` runtime-mode cases: each mode's attempt count, retry classification, and privacy-clean logs — VER-CRM-002, VER-CRM-003
-- [ ] Write then pass integration cases for the dev endpoints: catalog shape, validation 400s, unknown/unmapped-endpoint 404, and result readback for each terminal outcome — C3, C6
-- [ ] Add an integration case proving `InternalCancellation` returns `201` with the row intact (previously an escaping-cancellation gap) — VER-CRM-001, VER-SYS-003
-- [ ] Frontend dev tool client (`lib/crmSimulation.ts`): runtime-parsed types with runtime shape validation, no unchecked casts — ADR-0004
-- [ ] `CrmSimulationControl` island component: mode/latency/failure-count controls, Apply, and Run demo inquiry through the real `POST /api/inquiries` — VER-UI-001
-- [ ] Wire `window.__crmSimulationTools` through `Dashboard.cshtml` so the control renders only when the endpoints are mapped (same pattern as scenario seeding) — C7
-- [ ] Component tests for the control: catalog load, apply failure wording, run-demo success/failure/unavailable-result paths — REQ-UI-002
-- [ ] Browser walkthrough of all six modes incl. queue refresh, safe logs, and the persist-first invariant visible in the UI — VER-UI-002, VER-SYS-001
-- [ ] Docs: `docs/backend/README.md` (runtime modes + endpoints), `docs/frontend/README.md` (control), ADR-0007 addendum, and `docs/CHANGELOG.md` entry
+- [x] Write then pass `CrmPipelineTests` runtime-mode cases: each mode's attempt count, retry classification, and privacy-clean logs (`CrmRuntimeSimulationTests`, UT-CRM-011..017 + snapshot test) — VER-CRM-002, VER-CRM-003
+- [x] Write then pass integration cases for the dev endpoints: catalog shape, validation 400s, unknown-mode 400, unknown-result 404, result readback (`CrmSimulationEndpointTests`, IT-CRM-SIM-001..008) — C3, C6
+- [x] Add an integration case proving `InternalCancellation` returns `201` with the row intact (previously an escaping-cancellation gap) — IT-CRM-SIM-007 — VER-CRM-001, VER-SYS-003
+- [x] Frontend dev tool client (`lib/crmSimulation.ts`): runtime-parsed types with runtime shape validation, no unchecked casts — ADR-0004
+- [x] `CrmSimulationControl` island component: mode/latency/failure-count controls, Apply, and Run demo inquiry through the real `POST /api/inquiries` — VER-UI-001
+- [x] Wire `window.__crmSimulationTools` through `Dashboard.cshtml` so the control renders only when the endpoints are mapped (same pattern as scenario seeding) — C7
+- [x] Component tests for the control: catalog load, apply failure wording, run-demo success/failure/unavailable-result paths (`crmSimulationControl.test.tsx`) — REQ-UI-002
+- [x] Browser walkthrough of all six modes incl. queue refresh, safe logs, and the persist-first invariant visible in the UI (every demo row persisted; log trail matched the pipeline; zero-hit PII scan) — VER-UI-002, VER-SYS-001
+- [x] Docs: `docs/backend/README.md` (runtime modes + endpoints), `docs/frontend/README.md` (control), ADR-0007 addendum, and `docs/CHANGELOG.md` entry
 
-Evidence and scope: runtime mode execution, endpoint behavior, and the
-cancellation-isolation fix are live at `74eafc9` (smoke-proven against the
-running host: `TransientThenSuccess` = 3 attempts/success, `PermanentFailure`
+Evidence and scope: complete. Runtime + cancellation isolation at `74eafc9`
+(smoke-proven: `TransientThenSuccess` = 3 attempts/success, `PermanentFailure`
 = 1 attempt/failed/row intact, `InternalCancellation` = 1 attempt/cancelled/row
-intact). Automated coverage, the island control, and docs remain open above.
+intact). Automated coverage at `16478d2` — 16 CRM-simulation tests; full non-
+SqlServer suite 162/162 passing (the SqlServer lane still requires container
+infrastructure, unchanged). Island control + component tests at `cb3cbf4` (58
+Vitest passing); six-mode browser walkthrough on the built app confirmed each
+outcome, attempt count, queue refresh, and a zero-hit PII log scan.
 
 ---
 

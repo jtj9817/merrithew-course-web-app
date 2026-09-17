@@ -100,13 +100,42 @@ HTML. `OUTCOME_MESSAGES` holds the fixed user-facing strings.
 
 ## Gotchas
 
-- **No create/delete UI by design** — those are API/Swagger operations
+- **No create/delete UI by design** — those are API/Swagger operations. The one
+  exception is the development-only CRM demonstrator below, which creates a
+  single clearly-labelled demo inquiry to exercise the CRM path end to end
   ([C7](../architecture/contracts.md#c7-web-ui-and-hosting)).
 - **The dashboard needs the build.** Without `pnpm build`, `/dashboard` shows only
   the shell's "JavaScript required" guidance; the API and Swagger are unaffected.
 - **Test-only fetch double.** The Vitest suite installs a FIFO fetch double on both
   `window.fetch` and `globalThis.fetch` (bare `fetch` resolves through Node's global
   in jsdom); it's test infrastructure, not runtime code.
+
+## Development-only tools
+
+Two dashed-border controls render above the toolbar — **only when the Razor
+shell confirms their endpoints are mapped** (the shell sets
+`window.__scenarioTools` / `window.__crmSimulationTools` from
+`DevToolsOptions`, so UI and API surface cannot drift). Both are absent in a
+production-shaped host and inert in the test harness: when a flag is off, the
+component renders nothing and issues no mount-time request.
+
+- **Scenario switcher** ([`ScenarioSwitcher.tsx`](../../frontend/src/components/ScenarioSwitcher.tsx)):
+  seeds or clears the inquiry store through `/api/dev/scenarios` to demo list
+  states (empty / full / paging).
+- **CRM delivery demonstrator**
+  ([`CrmSimulationControl.tsx`](../../frontend/src/components/CrmSimulationControl.tsx)):
+  picks a runtime CRM behavior (`Success`, `TransientThenSuccess`,
+  `AlwaysTransientFailure`, `PermanentFailure`, `Timeout`,
+  `InternalCancellation`) with latency and failures-first knobs, then either
+  applies it or runs **one real inquiry** through the production
+  `POST /api/inquiries` and reads back only safe CRM metadata
+  (`lib/crmSimulation.ts` shape-checks every response). The status line always
+  names the outcome and attempt count, and on failure states that the stored
+  inquiry is unaffected — the persist-first rule, visible in the UI. Demo
+  inquiries appear in the queue like any visitor submission.
+
+Both tools share one refresh callback: after data changes, the island resets to
+the default filter/sort view and refetches.
 
 ## Related
 

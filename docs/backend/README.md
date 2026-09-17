@@ -142,6 +142,30 @@ exception means failure. A **real Polly v8 pipeline** wraps the simulated attemp
   inquiry id, attempt number, outcome, and error *type* — **never** visitor fields or
   raw exceptions.
 
+### Runtime outcome selection (development-only)
+
+Outcomes no longer require a test to inject them. A
+[`CrmSimulationRuntime`](../../backend/Services/CrmSimulation.cs) executes the
+configured **mode** inside the same Polly pipeline — `Success`,
+`TransientThenSuccess` (configurable failures-before-success),
+`AlwaysTransientFailure`, `PermanentFailure`, `Timeout`, and
+`InternalCancellation` (the CRM itself cancels; isolated after commit like every
+other failure). Defaults come from the `CrmSimulation` config section
+(validated at startup); settings are **snapshotted per sync**, so a mid-flight
+change never alters an in-flight retry sequence. The simulated boundary receives
+an explicit `CrmInquiryPayload` (never logged), and each completed sync records a
+**safe result** — inquiry id, mode, outcome, attempt count only.
+
+`/api/dev/crm-simulation` exposes this at runtime (mapped in Development or with
+`DevTools:CrmSimulation=true`): `GET /` (settings + mode catalog), `PUT /`
+(validated update; invalid bodies are `400` validation problems, not binding
+500s), and `GET /results/{inquiryId}` for one completed sync's safe result. The
+dashboard's dev control drives these endpoints
+([frontend docs](../frontend/README.md#development-only-tools)); when the tool is
+disabled, the endpoints are simply absent. This changes none of the accepted
+ADR-0007 delivery policy — sync remains bounded and best-effort, with no durable
+outbox.
+
 ## Related
 
 - [Frontend docs](../frontend/README.md) · [Domain model](../domain/course-inquiry.md)

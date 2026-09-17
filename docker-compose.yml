@@ -1,0 +1,26 @@
+# Runs the containerized Course Inquiry Dashboard.
+#
+# On the shared VPS, keep the published port bound to loopback and let the
+# Forge-managed nginx site reverse-proxy to it (proxy_pass http://127.0.0.1:8088)
+# and terminate TLS. Container lifecycle is owned here (restart policy), since
+# Forge does not manage containers natively.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: course-inquiry-dashboard:latest
+    container_name: course-inquiry-dashboard
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Data Source=/data/inquiries.db
+    volumes:
+      # Named volume keeps the SQLite database across redeploys.
+      - inquiries-data:/data
+
+volumes:
+  inquiries-data:

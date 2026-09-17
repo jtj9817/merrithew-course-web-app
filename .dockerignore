@@ -1,0 +1,33 @@
+# Keep the build context small and deterministic. The image rebuilds the
+# frontend and publishes the backend from source; nothing generated locally
+# should leak in.
+
+# VCS
+.git
+.gitignore
+
+# Build artifacts
+**/bin
+**/obj
+**/node_modules
+
+# Locally-built island assets (Stage 1 rebuilds these fresh)
+backend/wwwroot/app
+
+# Local SQLite database + WAL/SHM sidecars
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Not needed for the runtime image
+tests
+docs
+scripts
+.claude
+.zcode
+.vs
+.idea
+*.md
+Dockerfile
+.dockerignore
+docker-compose.yml

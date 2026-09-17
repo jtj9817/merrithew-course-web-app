@@ -109,28 +109,30 @@ reconciliation using the count-by-status / last-7-days reports.
 
 ## Accessibility
 
-Three considerations applied in the React island
-([C7](docs/architecture/contracts.md#c7-web-ui-and-hosting)):
+Three considerations applied across the Razor host and React island
+([C7](docs/architecture/contracts.md#c7-web-ui-and-hosting); comprehensive outline in
+[`docs/frontend/accessibility.md`](docs/frontend/accessibility.md)):
 
-1. **Semantic structure and labelled controls.** The queue is a real `<table>` with
-   `<th scope="col">` headers, and every control has an accessible name — the filter
-   and sort `<select>`s use `<label htmlFor>`
-   ([Toolbar](frontend/src/components/Toolbar.tsx)), and per-row controls use
-   `aria-label`s like *"Status for {name}"* and *"Details for {name}"*
-   ([InquiryTable](frontend/src/components/InquiryTable.tsx)) so a screen-reader user
-   can tell rows apart.
-2. **Keyboard operability and focus management.** All actions are native
-   `<button>`/`<select>` elements, so they're keyboard-operable by default. The detail
-   drawer moves focus into itself on open and **returns focus to the control that
-   opened it** on close — including programmatic closes — and `Escape` closes it
-   ([DetailPanel](frontend/src/components/DetailPanel.tsx),
-   [App](frontend/src/App.tsx)), so keyboard users never lose their place.
-3. **Feedback that isn't color-only, announced to assistive tech.** Success, errors,
-   and "record gone" are announced through one polite (`role="status"`) and one
-   assertive (`role="alert"`) live region
-   ([LiveRegions](frontend/src/components/LiveRegions.tsx)); status is shown as a text
-   **name** in a badge, not color alone, so the state is legible without color vision.
-
+1. **Semantic structure, data table architecture, and labelled controls (WCAG 1.3.1, 4.1.2).**
+   The queue is a real `<table>` with an explicit programmatic caption (`<caption className="sr-only">Incoming Course Inquiries Queue</caption>`),
+   `<th scope="col">` column headers, and dynamic sort direction indication (`aria-sort="ascending" | "descending"` on the Created date header).
+   Every interactive control carries an unambiguous accessible name — filter and sort dropdowns use `<label htmlFor>`
+   ([Toolbar](frontend/src/components/Toolbar.tsx)), and row controls use disambiguated labels like *"Status for {name}"*,
+   *"Apply for {name}"*, and *"Details for {name}"* ([InquiryTable](frontend/src/components/InquiryTable.tsx)) so screen-reader users
+   can distinguish controls across rows.
+2. **Keyboard operability, focus management, and bypass navigation (WCAG 2.1.1, 2.1.2, 2.4.1, 2.4.3, 2.4.7).**
+   A top-of-body Skip Navigation link (`<a href="#inquiry-queue" class="skip-link">`) allows keyboard users to bypass header/appbar/toolbar
+   controls directly to a persistent queue container (`<section id="inquiry-queue" tabindex="-1">`) across all queue states (loading, empty, error, ready).
+   All interactive actions are native keyboard-operable elements with high-contrast `:focus-visible` indicators (3:1 contrast ratio).
+   The detail modal drawer traps focus (`Tab`/`Shift+Tab`), sets the background `inert`, locks body scroll, closes on `Escape`,
+   and safely **returns focus to the opener button** on close — with a graceful fallback to `#inquiry-queue` or `#status-filter`
+   if the row was concurrently removed ([DetailPanel](frontend/src/components/DetailPanel.tsx), [App](frontend/src/App.tsx)).
+3. **Perceivable asynchronous feedback, error association, and non-color-dependent communication (WCAG 1.4.1, 3.3.1, 4.1.3).**
+   Asynchronous transitions announce through dual live regions ([LiveRegions](frontend/src/components/LiveRegions.tsx)):
+   a polite region (`role="status"`) for save confirmations, filter updates, and pagination transitions (announcing on-page count e.g. *"Page 2 (of 3) loaded, showing 20 matching inquiries"* alongside `aria-current="page"` on the active page indicator);
+   and an assertive region (`role="alert"`) for mutation errors and missing records. Failed status mutations associate inline `aria-invalid="true"`
+   on the row's `<select>`. Workflow status is never communicated by color alone: badges display the text **name**, supplemented in Colorblind Mode
+   by distinct shape and icon cues (solid pill + star, dashed + chat, dotted + clock, double border + check, slash) and an on-screen legend guide.
 ---
 
 ## Code quality

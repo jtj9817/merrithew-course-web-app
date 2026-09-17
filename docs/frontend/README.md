@@ -94,9 +94,11 @@ HTML. `OUTCOME_MESSAGES` holds the fixed user-facing strings.
 - **Safe rendering.** Visitor and error text render as text (React escaping), so
   markup in a name or message is inert — verified in the browser XSS walkthrough
   ([manual evidence](../testing/manual-evidence.md)).
-- **Accessibility** — semantic table + labelled controls, keyboard-operable actions,
-  detail-panel focus in/return-to-opener, and polite/assertive live regions. Details
-  are in the [accessibility written answer](../../written-answers.md#accessibility).
+- **Accessibility** — semantic table + caption + aria-sort, skip-link bypass navigation,
+  keyboard-operable actions, detail-panel focus trap and return-to-opener with fallback,
+  polite/assertive live regions, aria-invalid error association, and colorblind mode.
+  Full details are in the [accessibility document](accessibility.md) and
+  the [written answers](../../written-answers.md#accessibility).
 
 ## Gotchas
 

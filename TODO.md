@@ -104,10 +104,22 @@ remain planned until Phase 9.
 
 ## Phase 7 — Regression gate (tests were written in each slice)
 
-- [ ] Confirm every catalog case has executable red/green evidence; both defaults/timestamps and CRM-failure isolation are required, not alternative minimum candidates
-- [ ] Build frontend assets, then pass all local .NET unit/SQLite/host integration and frontend unit/component integration tests; zero discovered tests are not success
-- [ ] Pass the SQL Server category on a disposable database; absent infrastructure blocks VER-DATA-002 rather than silently skipping it
-- [ ] Run the documented browser/Swagger checks; retain manual evidence separately from automated results
+- [x] Confirm every catalog case has executable red/green evidence; both defaults/timestamps and CRM-failure isolation are required, not alternative minimum candidates
+- [x] Build frontend assets, then pass all local .NET unit/SQLite/host integration and frontend unit/component integration tests; zero discovered tests are not success
+- [x] Pass the SQL Server category on a disposable database; absent infrastructure blocks VER-DATA-002 rather than silently skipping it
+- [x] Run the documented browser/Swagger checks; retain manual evidence separately from automated results
+
+Evidence and scope: [Phase 7 implementation record](docs/testing/tdd-plan.md#phase-7-implementation-record)
+and [manual evidence](docs/testing/manual-evidence.md). All 80 xUnit + 35
+Vitest catalog cases map to executable tests and pass (146 non-SQLServer, 8
+SqlServer on a fresh disposable container, 52 Vitest); VER-APP-001 and
+VER-CRM-001 are covered as primary mapped evidence, not alternative minimums.
+Red evidence is not per-case uniform: the weak/disclaimed batches recorded in
+earlier phase records (IT-UI-012..030; Phases 0–2 permutations) still stand.
+MAN-UI-003 keeps its documented tooling substitution (JS-less fetch +
+IT-HOST-003). Browser walkthrough and screenshot review ran through delegated
+agents despite the Agent tool rejecting `task`/`vision-agent` dispatches
+(provider `reasoning-level-missing`) — see the record's scope notes.
 
 ## Phase 8 — Deliverable docs
 

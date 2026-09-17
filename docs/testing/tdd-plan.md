@@ -453,6 +453,105 @@ Vitest + 146 xUnit green, format/warnaserror clean):
    fresh clone where the generated folder does not exist — guarded with an
    existence check.
 
+## Phase 7 implementation record
+
+Executed 2026-09-17 at commit `b87513a` (clean tree). Phase 7 is the
+regression gate: no new production code, no new automated cases. All four
+TODO items pass; details below. Manual evidence is kept separate in
+[`manual-evidence.md`](manual-evidence.md).
+
+### 1. Catalog evidence audit (every case red/green)
+
+- **Executable coverage**: all 80 xUnit catalog cases
+  (UT-VAL-001..012, UT-CRM-001..010, IT-APP-001..020, IT-API-001..021,
+  IT-DATA-001..005, IT-HOST-001..004, IT-SQL-001..008) match a
+  `[Trait("CaseId", …)]` fact with no gaps, and all 35 Vitest cases
+  (UT-UI-001..005, IT-UI-001..030) appear in test files by name. The 10
+  DTO-HTTP facts remain auxiliary and are not counted toward catalog
+  completion. MAN-UI-001..004 are manual by design (see
+  [`manual-evidence.md`](manual-evidence.md)).
+- **Red evidence classification** (per the earlier records, re-checked): strong
+  first-red for IT-APP-001..020, UT-CRM-001..010, IT-API-001..021 (except the
+  documented vacuous IT-API-005), IT-HOST-001..004, UT-UI-001..005,
+  IT-UI-001..011, UT-VAL-002, IT-DATA-001, and DTO-HTTP-007..009. Weak first
+  red recorded for IT-UI-012..030. The Phases 0–2 record explicitly disclaims
+  per-case red runs for the remaining Phase 0–2 permutations.
+- **The two mandatory verifications are primary, not alternative minimums**:
+  - VER-APP-001 (defaults/timestamps): IT-APP-001 asserts `Status.New`,
+    `CreatedDate == UpdatedDate`, and a fresh-context re-read
+    (`InquiryServiceTests.cs:42-52`); IT-APP-003 asserts `UpdatedDate` advances
+    while `CreatedDate` is immutable (`:101-102`); IT-API-001/010 repeat the
+    contract over HTTP (`InquiriesApiTests.cs:50-52, 239-242`).
+  - VER-CRM-001 (persistence survives CRM failure): IT-APP-016 proves the
+    committed row is readable from a fresh context after CRM exhaustion with no
+    exception escaping create (`InquiryServiceTests.cs:408-431`); IT-APP-014
+    proves no CRM call happens before commit on database failure
+    (`:354-373`); IT-API-018 proves CRM failure still yields `201 Created` with
+    a fetchable row (`InquiriesApiTests.cs:387-400`).
+
+### 2. Local gates (frontend + .NET)
+
+| Command | Result |
+| --- | --- |
+| `pnpm --dir frontend install --frozen-lockfile` | lockfile up to date |
+| `pnpm --dir frontend run build` | clean; manifest + `index-*.css/js` emitted to `backend/wwwroot/app/` |
+| `pnpm --dir frontend test` | **52/52 passed** (8 test files, 3.4 s) — nonzero discovery satisfied |
+| `dotnet build --warnaserror` | 0 warnings, 0 errors |
+| `dotnet format --verify-no-changes` | clean |
+| `dotnet test --no-build --filter 'Category!=SqlServer'` | **Passed! 146/146** (0 failed, 0 skipped, 10 s) |
+
+The .NET host lane ran after the fresh frontend build, so IT-HOST exercised
+the just-compiled assets.
+
+### 3. SQL Server lane (disposable)
+
+Fresh container `merrithew-phase7-sql`
+(`mcr.microsoft.com/mssql/server:2022-latest`, `127.0.0.1:15440→1433`),
+ready ~10 s, connection string with `Initial Catalog=CourseInquiryTests_bootstrap`
+per the README contract:
+
+`dotnet test --filter 'Category=SqlServer'` → **Passed! 8/8**
+(IT-SQL-001..008, 3 s). Post-run `sys.databases` probe: zero leftover
+`CourseInquiryTests_*` databases; container removed. VER-DATA-002's SQL Server
+leg ran rather than being skipped.
+
+### 4. Browser / Swagger manual checks
+
+Live app (`Development`, isolated `/tmp` SQLite, fresh build): Swagger doc +
+UI `200`; the OpenAPI document lists the status enum on
+`InquiryResponse`/`UpdateStatusDto` and `201/400` (POST) and `200/400/404`
+(PUT) responses. Six synthetic inquiries seeded via the REST surface covering
+all five statuses, including an XSS-sentinel row. MAN-UI-001/002/004 executed
+in a real browser by a delegated browser-agent pass: status update announced
+"Status saved." with persistence across a cache-bypassed reload; XSS payloads
+inert (zero `<img>` elements; only the app bundle script in the DOM; no
+dialog); console empty for the whole session; keyboard-only triage correct
+(Tab order filter→sort→3 stops/row→pagination, Enter/Escape drawer focus
+cycle, arrow-key status change); screenshots at 1280/375/640 px. A separate
+vision review of the three screenshots returned PASS 3/3 (text-labeled
+statuses, no clipping/overlap; the 375 px table cut is the sanctioned scroll
+wrapper). MAN-UI-003 retains the Phase 6 tooling limitation: evidenced by a
+JS-less client fetch of the shell plus IT-HOST-003 instead of a
+JavaScript-disabled browser (see [`manual-evidence.md`](manual-evidence.md)).
+
+### Honest scope notes
+
+- Agent fan-out was armed, but the Agent tool rejected `task`,
+  `general-purpose`, and `vision-agent` dispatches all session with a
+  provider-side `reasoning-level-missing` error (one `scout` dispatch
+  succeeded). Per the established fallback the waves ran single-threaded in
+  planned order, with two substitutions recorded here: the browser walkthrough
+  was executed by the resumable scout agent driving Chrome through the
+  `chrome-devtools` CLI over Bash (installed globally this session), and the
+  visual screenshot review was performed by that same agent's image-capable
+  Read tool instead of a dedicated vision agent. The orchestrator performed
+  only the pre-redirect smoke steps (mount, filter, drawer, Escape) before
+  being told to stop driving the browser directly.
+- No failures were found anywhere in the gate; no production code changed.
+- Aggregate `VER-*` statuses in `model.json` remain **planned** by design
+  until Phase 9 collects per-verification evidence; Phase 7 verifies the case
+  layer beneath them.
+
 ## Primary guidance used
 
 - Microsoft Learn: [ASP.NET Core integration tests](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-10.0) for WebApplicationFactory, actual HTTP-pipeline testing, and explicit test-host environments. Its project-separation recommendation is implemented here as category/directory separation in the small, already planned test project.

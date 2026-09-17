@@ -41,6 +41,7 @@ public sealed class FrontendHostTests : IAsyncLifetime
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(1, CountOccurrences(html, "id=\"dashboard-root\""));
+        Assert.Contains("<a href=\"#inquiry-queue\" class=\"skip-link\">Skip to inquiry queue</a>", html);
 
         var scriptSources = ExtractAttributes(html, "script", "src")
             .Where(source => IsModuleScript(html, source))

@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { formatIsoDate, displayName } from '../lib/format'
 import { STATUS_NAMES } from '../lib/types'
 import type { Inquiry, StatusName } from '../lib/types'
+import type { SortDirection } from '../lib/listQuery'
 import { StatusBadge } from './StatusBadge'
-
 interface InquiryTableProps {
   items: Inquiry[]
   fetching: boolean
   mutatingIds: readonly number[]
+  failedIds?: readonly number[]
+  sort?: SortDirection
   colorblind?: boolean
   onOpenDetail: (id: number, opener: HTMLElement) => void
   onApplyStatus: (id: number, next: StatusName) => void
@@ -17,13 +19,21 @@ export function InquiryTable({
   items,
   fetching,
   mutatingIds,
+  failedIds = [],
+  sort,
   colorblind = false,
   onOpenDetail,
   onApplyStatus,
 }: InquiryTableProps) {
   return (
     <div className="table-wrap">
-      <table className="inquiry-table" aria-busy={fetching || undefined}>
+      <table
+        id="inquiry-queue"
+        tabIndex={-1}
+        className="inquiry-table"
+        aria-busy={fetching || undefined}
+      >
+        <caption className="sr-only">Incoming Course Inquiries Queue</caption>
         <thead>
           <tr>
             <th scope="col" className="th-details">Details</th>
@@ -31,7 +41,13 @@ export function InquiryTable({
             <th scope="col" className="th-name">Last name</th>
             <th scope="col" className="th-course">Course</th>
             <th scope="col" className="th-status">Status</th>
-            <th scope="col" className="th-created">Created</th>
+            <th
+              scope="col"
+              className="th-created"
+              aria-sort={sort === 'createdDateAsc' ? 'ascending' : 'descending'}
+            >
+              Created
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -40,6 +56,7 @@ export function InquiryTable({
               key={inquiry.id}
               inquiry={inquiry}
               mutating={mutatingIds.includes(inquiry.id)}
+              isFailed={failedIds.includes(inquiry.id)}
               colorblind={colorblind}
               onOpenDetail={onOpenDetail}
               onApplyStatus={onApplyStatus}
@@ -54,12 +71,20 @@ export function InquiryTable({
 interface InquiryRowProps {
   inquiry: Inquiry
   mutating: boolean
+  isFailed?: boolean
   colorblind?: boolean
   onOpenDetail: (id: number, opener: HTMLElement) => void
   onApplyStatus: (id: number, next: StatusName) => void
 }
 
-function InquiryRow({ inquiry, mutating, colorblind, onOpenDetail, onApplyStatus }: InquiryRowProps) {
+function InquiryRow({
+  inquiry,
+  mutating,
+  isFailed = false,
+  colorblind,
+  onOpenDetail,
+  onApplyStatus,
+}: InquiryRowProps) {
   const [draft, setDraft] = useState<StatusName>(inquiry.status)
   const name = displayName(inquiry)
 
@@ -93,6 +118,7 @@ function InquiryRow({ inquiry, mutating, colorblind, onOpenDetail, onApplyStatus
           <StatusBadge status={inquiry.status} colorblind={colorblind} />
           <select
             aria-label={`Status for ${name}`}
+            aria-invalid={isFailed ? 'true' : undefined}
             name={`inquiry-${inquiry.id}-status`}
             value={draft}
             onChange={(event) => setDraft(event.target.value as StatusName)}

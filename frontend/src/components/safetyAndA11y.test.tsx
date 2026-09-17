@@ -8,6 +8,8 @@ import {
   fixInq1Contacted,
   fixInq2,
   fixInqXss,
+  makeRows,
+  problem500,
   problem500Dirty,
 } from '../test/fixtures'
 import { renderIsland, uninstallActiveIsland } from '../test/islandTestKit'
@@ -229,5 +231,138 @@ describe('IT-UI-030 the island grows no create or delete affordances', () => {
       .flatMap((root) => Array.from(root.querySelectorAll('button, select, input, a')))
       .filter((control) => forbidden.test(control.getAttribute('aria-label') ?? ''))
     expect(namedControls).toEqual([])
+  })
+})
+
+describe('IT-UI-031 table caption, aria-sort, and bypass target identify queue semantics', () => {
+  it('exposes the bypass anchor id, table caption, and dynamic aria-sort on Created header', async () => {
+    const { double } = renderIsland((d) =>
+      d.queueResponse(jsonResponse(200, envelope([fixInq1(), fixInq2()]))),
+    )
+    await screen.findByRole('row', { name: /O'Neill/ })
+
+    // GAP-1 bypass target & GAP-2 table caption
+    const table = document.getElementById('inquiry-queue')
+    expect(table).not.toBeNull()
+    expect(table?.tagName).toBe('TABLE')
+    expect(table).toHaveAttribute('tabindex', '-1')
+    const caption = table?.querySelector('caption')
+    expect(caption).not.toBeNull()
+    expect(caption).toHaveClass('sr-only')
+    expect(caption).toHaveTextContent('Incoming Course Inquiries Queue')
+
+    // GAP-3 Created column aria-sort (defaults to descending)
+    const createdHeader = screen.getByRole('columnheader', { name: /Created/i })
+    expect(createdHeader).toHaveAttribute('aria-sort', 'descending')
+
+    // Change sort order to Oldest first
+    double.queueResponse(
+      jsonResponse(200, envelope([fixInq2(), fixInq1()], { totalCount: 2 })),
+    )
+    await user.selectOptions(screen.getByLabelText('Sort order'), 'createdDateAsc')
+    await waitFor(() =>
+      expect(createdHeader).toHaveAttribute('aria-sort', 'ascending'),
+    )
+  })
+})
+
+describe('IT-UI-032 pagination and filter updates announce to polite live region with aria-current on active page', () => {
+  it('marks active page with aria-current and announces filter and pagination updates', async () => {
+    const { double } = renderIsland((d) =>
+      d.queueResponse(
+        jsonResponse(200, envelope(makeRows(20, 'New'), { totalCount: 45 })),
+      ),
+    )
+    await screen.findByRole('row', { name: /First1 / })
+
+    // GAP-5: aria-current on active page indicator
+    const pageIndicator = document.querySelector('.page-indicator')
+    expect(pageIndicator).not.toBeNull()
+    expect(pageIndicator).toHaveAttribute('aria-current', 'page')
+
+    const statusRegion = screen.getByRole('status')
+
+    // Filter change
+    double.queueResponse(
+      jsonResponse(200, envelope([fixInq2()], { totalCount: 1 })),
+    )
+    await user.selectOptions(screen.getByLabelText('Filter by status'), 'Contacted')
+    await screen.findByRole('row', { name: /Fernández/ })
+
+    expect(statusRegion).toHaveTextContent(/Filtered by Contacted: 1 matching inquiry found/i)
+
+    // Pagination change: switch to All statuses with 45 items then click Next
+    double.queueResponse(
+      jsonResponse(200, envelope(makeRows(20, 'New'), { totalCount: 45 })),
+    )
+    await user.selectOptions(screen.getByLabelText('Filter by status'), 'All')
+    await screen.findByRole('row', { name: /First1 / })
+
+    double.queueResponse(
+      jsonResponse(200, envelope(makeRows(20, 'New', 21), { page: 2, totalCount: 45 })),
+    )
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    await screen.findByRole('row', { name: /First21/ })
+
+    expect(statusRegion).toHaveTextContent(/Page 2 \(of 3\) loaded, showing 45 matching inquiries/i)
+  })
+})
+
+describe('IT-UI-033 failed status mutation associates aria-invalid on the row select', () => {
+  it('sets aria-invalid="true" on failure and clears it on success', async () => {
+    const { double } = renderIsland((d) =>
+      d.queueResponse(jsonResponse(200, envelope([fixInq1()]))),
+    )
+    const oneill = await screen.findByRole('row', { name: /O'Neill/ })
+    const select = within(oneill).getByRole('combobox', { name: "Status for Avery O'Neill" })
+    const apply = within(oneill).getByRole('button', { name: "Apply for Avery O'Neill" })
+
+    // Initially valid
+    expect(select).not.toHaveAttribute('aria-invalid')
+
+    // Trigger failure
+    double.queueResponse(jsonResponse(500, problem500()))
+    await user.selectOptions(select, 'Contacted')
+    await user.click(apply)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/unexpected error|could not be saved/i)
+    expect(select).toHaveAttribute('aria-invalid', 'true')
+
+    // Recover with success
+    double.queueResponse(jsonResponse(200, fixInq1Contacted()))
+    double.queueResponse(jsonResponse(200, envelope([fixInq1Contacted()])))
+    await user.click(apply)
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/saved/i)
+    expect(select).not.toHaveAttribute('aria-invalid')
+  })
+})
+
+describe('IT-UI-034 detached opener recovers focus to designated fallback container', () => {
+  it('moves focus to the inquiry queue table when opener is removed from the DOM', async () => {
+    const { double } = renderIsland((d) =>
+      d.queueResponse(jsonResponse(200, envelope([fixInq1()]))),
+    )
+    const oneill = await screen.findByRole('row', { name: /O'Neill/ })
+    const opener = within(oneill).getByRole('button', { name: /details for Avery O'Neill/i })
+
+    double.queueResponse(jsonResponse(200, fixInq1()))
+    await user.click(opener)
+    await screen.findByText('Email')
+    const panel = document.querySelector('.detail-panel') as HTMLElement
+    expect(panel).toHaveFocus()
+
+    // Simulate the row / opener being detached while the modal is open
+    opener.remove()
+    expect(opener.isConnected).toBe(false)
+
+    // Close via Escape
+    await user.keyboard('{Escape}')
+    expect(document.querySelector('.detail-panel')).toBeNull()
+
+    // Focus lands on the fallback container, not document.body
+    const tableFallback = document.getElementById('inquiry-queue')
+    expect(document.activeElement).toBe(tableFallback)
+    expect(document.activeElement).not.toBe(document.body)
   })
 })

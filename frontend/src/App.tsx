@@ -46,6 +46,7 @@ export default function App() {
   const [assertive, setAssertive] = useState('')
   const [detail, setDetail] = useState<DetailState>({ kind: 'closed' })
   const [mutatingIds, setMutatingIds] = useState<number[]>([])
+  const [failedIds, setFailedIds] = useState<number[]>([])
   const [toast, setToast] = useState<ToastNotification | null>(null)
   const [colorblindMode, setColorblindMode] = useState<boolean>(getInitialColorblindMode)
   const [appbarTarget, setAppbarTarget] = useState<HTMLElement | null>(null)
@@ -96,6 +97,7 @@ export default function App() {
   const listSeqRef = useRef(0)
   const detailSeqRef = useRef(0)
   const refreshReasonRef = useRef<RefreshReason>('other')
+  const prevRequestRef = useRef<ListUiState | null>(null)
   const phaseRef = useRef<ListPhase>(phase)
   const detailRef = useRef<DetailState>(detail)
   detailRef.current = detail
@@ -106,12 +108,22 @@ export default function App() {
 
   /** C7: every panel close — user-initiated or programmatic — returns focus to its opener. */
   const focusDetailOpener = useCallback((state: DetailState) => {
-    if (state.kind !== 'closed' && state.opener.isConnected) {
-      const opener = state.opener
-      opener.focus()
-      requestAnimationFrame(() => {
+    if (state.kind !== 'closed') {
+      if (state.opener.isConnected) {
+        const opener = state.opener
         opener.focus()
-      })
+        requestAnimationFrame(() => {
+          opener.focus()
+        })
+      } else {
+        const fallback =
+          document.getElementById('inquiry-queue') ??
+          document.getElementById('status-filter')
+        fallback?.focus()
+        requestAnimationFrame(() => {
+          fallback?.focus()
+        })
+      }
     }
   }, [])
 
@@ -123,6 +135,8 @@ export default function App() {
   // Dev-only data changes return to a clean view and always refetch, even when
   // the queue already shows the default filter and sort.
   const handleDevelopmentDataChanged = useCallback(() => {
+    prevRequestRef.current = null
+    setFailedIds([])
     setSort(undefined)
     setRequest({ filter: 'All' })
     refreshList('other')
@@ -144,6 +158,9 @@ export default function App() {
         if (envelope.items.length === 0 && envelope.page > lastPage) {
           // The page emptied under pagination (C4 is not a snapshot): land on
           // the last available page and refetch rather than showing a dead end.
+          if (wasSaveRefresh) {
+            refreshReasonRef.current = 'save'
+          }
           setRequest((current) => ({ ...current, page: lastPage }))
           return
         }
@@ -154,6 +171,26 @@ export default function App() {
         }
         applyPhase({ kind: 'ready', envelope })
         setFetching(false)
+
+        const prevRequest = prevRequestRef.current
+        prevRequestRef.current = request
+
+        if (!wasSaveRefresh && prevRequest !== null) {
+          const filterChanged = prevRequest.filter !== request.filter
+          const pageChanged = (prevRequest.page ?? 1) !== envelope.page
+          const countWord = envelope.totalCount === 1 ? 'inquiry' : 'inquiries'
+
+          if (filterChanged) {
+            const filterLabel = request.filter === 'All' ? 'All' : request.filter
+            setPolite(
+              `Filtered by ${filterLabel}: ${envelope.totalCount} matching ${countWord} found`,
+            )
+          } else if (pageChanged) {
+            setPolite(
+              `Page ${envelope.page} (of ${lastPage}) loaded, showing ${envelope.totalCount} matching ${countWord}`,
+            )
+          }
+        }
         return
       }
 
@@ -224,6 +261,7 @@ export default function App() {
         const outcome = await putInquiryStatus(id, next)
         if (outcome.kind === 'record') {
           const updated = outcome.inquiry
+          setFailedIds((current) => current.filter((rowId) => rowId !== id))
           if (phaseRef.current.kind === 'ready') {
             const current = phaseRef.current.envelope
             applyPhase({
@@ -243,6 +281,7 @@ export default function App() {
           setToast({ id: Date.now(), variant: 'info' })
           refreshList('save')
         } else if (outcome.kind === 'gone') {
+          setFailedIds((current) => (current.includes(id) ? current : [...current, id]))
           const message = messageFor(outcome)
           setAssertive(message)
           setToast({ id: Date.now(), variant: 'error' })
@@ -255,11 +294,14 @@ export default function App() {
         } else {
           // Network/unparseable failures during an update get the mutation
           // wording, not the list-loading message.
+          setFailedIds((current) => (current.includes(id) ? current : [...current, id]))
           const message =
             outcome.kind === 'generic' ? OUTCOME_MESSAGES.mutationFailure : messageFor(outcome)
           setAssertive(message)
           setToast({ id: Date.now(), variant: 'error' })
         }
+      } catch {
+        setFailedIds((current) => (current.includes(id) ? current : [...current, id]))
       } finally {
         setMutatingIds((current) => current.filter((rowId) => rowId !== id))
       }
@@ -328,6 +370,8 @@ export default function App() {
             items={rows}
             fetching={fetching}
             mutatingIds={mutatingIds}
+            failedIds={failedIds}
+            sort={sort}
             colorblind={colorblindMode}
             onOpenDetail={openDetail}
             onApplyStatus={applyStatus}

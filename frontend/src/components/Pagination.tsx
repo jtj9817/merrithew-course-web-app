@@ -14,7 +14,7 @@ export function Pagination({ page, lastPage, onNavigate }: PaginationProps) {
       <button type="button" disabled={atFirstPage} onClick={() => onNavigate(page - 1)}>
         Previous
       </button>
-      <span className="page-indicator">
+      <span className="page-indicator" aria-current="page">
         Page {page}
         {lastPage === null ? '' : ` of ${lastPage}`}
       </span>

@@ -274,6 +274,32 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* ── Skip Navigation Link (Bypass Blocks) ────────────────────────────────── */
+
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--space-4);
+  z-index: 1000;
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font-family: var(--font-family-brand);
+  font-weight: 600;
+  font-size: var(--md-sys-typescale-label-large-size);
+  border-radius: var(--md-sys-shape-corner-small);
+  text-decoration: none;
+  box-shadow: 0 2px 8px var(--md-sys-color-shadow);
+  transition: top var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 16px;
+  outline: 3px solid var(--md-sys-color-on-primary);
+  outline-offset: 2px;
+}
+
 /* ── Screen Reader Utility ───────────────────────────────────────────────── */
 
 .sr-only {

@@ -6,7 +6,9 @@
 | **Key** | A11Y-101 |
 | **Component** | `sub.webui` (`frontend`, `backend/Pages`) |
 | **Priority** | High |
-| **Status** | Open / Backlog |
+| **Status** | Closed |
+| **Closed At** | 2026-09-17 |
+| **Resolution** | Resolved -- implemented skip link navigation (GAP-1), table caption and aria-sort on Created column header (GAP-2, GAP-3), aria-invalid on failed status select controls (GAP-4), aria-current on active pagination indicator and polite live announcements for filter/page transitions (GAP-5), and fallback focus recovery on modal close for detached openers (GAP-6). Verified with unit and integration tests. |
 | **Labels** | `accessibility`, `aoda`, `wcag-2.1-aa`, `compliance`, `frontend`, `screen-reader`, `keyboard-navigation` |
 | **Regulatory Standard** | Accessibility for Ontarians with Disabilities Act (AODA, 2005) / IASR §14 (WCAG 2.0/2.1 Level AA) |
 
@@ -164,21 +166,21 @@ Scenario: Safe fallback focus management on modal closure
 
 ## 5. Technical Implementation Tasks
 
-- [ ] **Bypass Navigation (`GAP-1`)**:
-  - [ ] Add `<a href="#inquiry-queue" class="skip-link">Skip to inquiry queue</a>` in `backend/Pages/Shared/_Layout.cshtml`.
-  - [ ] Add `id="inquiry-queue"` to `#dashboard-root` or `<table class="inquiry-table">`.
-  - [ ] Implement `.skip-link` CSS in `styles.css` (`position: absolute; top: -100px;` transitioning to `top: 16px;` on `:focus-visible`).
-- [ ] **Table Semantics (`GAP-2`, `GAP-3`)**:
-  - [ ] Add `<caption className="sr-only">Incoming Course Inquiries Queue</caption>` to `InquiryTable.tsx`.
-  - [ ] Forward `sort` prop to `InquiryTable.tsx` and bind `aria-sort` to the Created date column header.
-- [ ] **Form Error State (`GAP-4`)**:
-  - [ ] Track failed update IDs in `App.tsx` and pass `failedIds: readonly number[]` to `InquiryTable.tsx`.
-  - [ ] Apply `aria-invalid={isFailed ? 'true' : undefined}` on the row `<select>`.
-- [ ] **Live Announcements & Pagination (`GAP-5`)**:
-  - [ ] Add `aria-current="page"` to the active page indicator in `Pagination.tsx`.
-  - [ ] Emit polite status announcements in `App.tsx` when page changes or filter changes settle.
-- [ ] **Focus Target Fallback (`GAP-6`)**:
-  - [ ] Update `focusDetailOpener()` in `App.tsx` to query an anchor element (e.g. `document.getElementById('status-filter')?.focus()`) if `opener.isConnected` is false.
-- [ ] **Verification**:
-  - [ ] Add unit and integration tests in `safetyAndA11y.test.tsx` verifying skip link target, `<caption>`, `aria-sort`, `aria-invalid`, and fallback focus.
-  - [ ] Run full test suite (`pnpm test` and `dotnet test`).
+- [x] **Bypass Navigation (`GAP-1`)**:
+  - [x] Add `<a href="#inquiry-queue" class="skip-link">Skip to inquiry queue</a>` in `backend/Pages/Shared/_Layout.cshtml`.
+  - [x] Add `id="inquiry-queue"` to `#dashboard-root` or `<table class="inquiry-table">`.
+  - [x] Implement `.skip-link` CSS in `styles.css` (`position: absolute; top: -100px;` transitioning to `top: 16px;` on `:focus-visible`).
+- [x] **Table Semantics (`GAP-2`, `GAP-3`)**:
+  - [x] Add `<caption className="sr-only">Incoming Course Inquiries Queue</caption>` to `InquiryTable.tsx`.
+  - [x] Forward `sort` prop to `InquiryTable.tsx` and bind `aria-sort` to the Created date column header.
+- [x] **Form Error State (`GAP-4`)**:
+  - [x] Track failed update IDs in `App.tsx` and pass `failedIds: readonly number[]` to `InquiryTable.tsx`.
+  - [x] Apply `aria-invalid={isFailed ? 'true' : undefined}` on the row `<select>`.
+- [x] **Live Announcements & Pagination (`GAP-5`)**:
+  - [x] Add `aria-current="page"` to the active page indicator in `Pagination.tsx`.
+  - [x] Emit polite status announcements in `App.tsx` when page changes or filter changes settle.
+- [x] **Focus Target Fallback (`GAP-6`)**:
+  - [x] Update `focusDetailOpener()` in `App.tsx` to query an anchor element (e.g. `document.getElementById('status-filter')?.focus()`) if `opener.isConnected` is false.
+- [x] **Verification**:
+  - [x] Add unit and integration tests in `safetyAndA11y.test.tsx` verifying skip link target, `<caption>`, `aria-sort`, `aria-invalid`, and fallback focus.
+  - [x] Run full test suite (`pnpm test` and `dotnet test`).

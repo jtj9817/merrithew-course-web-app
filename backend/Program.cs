@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using CourseInquiryDashboard.DevTools;
 using CourseInquiryDashboard.Models;
 using CourseInquiryDashboard.Serialization;
 using CourseInquiryDashboard.Services;
@@ -22,6 +23,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IInquiryService, InquiryService>();
 builder.Services.AddSingleton<ICrmClient, SimulatedCrmClient>();
+builder.Services.AddScoped<IScenarioSeeder, ScenarioSeeder>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("The database connection is not configured.")));
@@ -70,6 +72,16 @@ app.UseRouting();
 app.MapRazorPages();
 app.MapGet("/", () => Results.Redirect("/dashboard"));
 app.MapControllers();
+
+// Dev-only scenario seeding for the dashboard (empty / full / pagination states).
+// Enabled automatically in Development, or in any environment by explicitly
+// setting DevTools:ScenarioSeeding=true — the endpoints wipe and rewrite data,
+// so they must stay off in production unless deliberately opted in.
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("DevTools:ScenarioSeeding"))
+{
+    app.MapScenarioEndpoints();
+}
+
 await app.RunAsync();
 
 public partial class Program;

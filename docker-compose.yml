@@ -18,6 +18,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Data Source=/data/inquiries.db
+      # Dev scenario-seeding endpoints (/api/dev/scenarios). Off by default so
+      # they never ship enabled to the VPS; flip on locally to simulate states:
+      #   DEV_SCENARIO_SEEDING=true docker compose up -d
+      DevTools__ScenarioSeeding: ${DEV_SCENARIO_SEEDING:-false}
     volumes:
       # Named volume keeps the SQLite database across redeploys.
       - inquiries-data:/data

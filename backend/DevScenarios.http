@@ -1,0 +1,29 @@
+# Dev-only scenario seeding for the Course Inquiry Dashboard.
+# Available in Development, or when DevTools:ScenarioSeeding=true.
+# The dashboard front-end drives the same endpoints via fetch (same origin).
+
+@host = http://localhost:5083
+
+### List the available scenarios (name, description, size)
+GET {{host}}/api/dev/scenarios
+
+### Simulate the full, realistic demo dataset (28 rows, resets first)
+POST {{host}}/api/dev/scenarios/demo
+
+### Simulate multi-page pagination (45 rows)
+POST {{host}}/api/dev/scenarios/pagination
+
+### Simulate a single page of mixed statuses (6 rows)
+POST {{host}}/api/dev/scenarios/single-page
+
+### Simulate a fresh, all-New triage inbox (12 rows)
+POST {{host}}/api/dev/scenarios/all-new
+
+### Simulate the empty state
+POST {{host}}/api/dev/scenarios/empty
+
+### Append the demo set WITHOUT clearing first
+POST {{host}}/api/dev/scenarios/demo?reset=false
+
+### Clear every inquiry
+DELETE {{host}}/api/dev/scenarios

@@ -86,7 +86,7 @@ describe('IT-UI-016 a row leaving the active filter disappears after refresh', (
       expect(screen.queryByRole('row', { name: /O'Neill/ })).not.toBeInTheDocument(),
     )
     expect(double.calls.at(-1)?.url).toBe('/api/inquiries?status=New&page=1')
-    expect(screen.getByText(/1 inquiry/)).toBeInTheDocument()
+    expect(screen.getByText(/1 inquiry/, { selector: '.total-count' })).toBeInTheDocument()
     expect(await screen.findByText(/status saved/i)).toBeInTheDocument()
     expect(screen.getByRole('alert')).toBeEmptyDOMElement()
   })

@@ -1,3 +1,4 @@
+using CourseInquiryDashboard.Hosting;
 using CourseInquiryDashboard.Models;
 using CourseInquiryDashboard.Models.Dtos;
 using CourseInquiryDashboard.Serialization;
@@ -21,6 +22,7 @@ public sealed partial class InquiryService(
     AppDbContext db,
     ICrmClient crmClient,
     TimeProvider clock,
+    InquiryMetrics metrics,
     ILogger<InquiryService> logger) : IInquiryService
 {
     public async Task<InquiryResponse> CreateAsync(CreateInquiryDto request, CancellationToken cancellationToken = default)
@@ -45,6 +47,11 @@ public sealed partial class InquiryService(
 
         db.CourseInquiries.Add(inquiry);
         await db.SaveChangesAsync(cancellationToken); // definite failures propagate; no CRM yet
+
+        // OBS-101 GAP-3: the creation audit entry — after the commit, before CRM sync —
+        // is the reconciliation point between submissions and stored rows.
+        LogInquiryCreated(inquiry.Id);
+        metrics.AddIntake("created");
 
         await SyncCrmAfterCommitAsync(inquiry, cancellationToken);
         return ToResponse(inquiry);
@@ -124,18 +131,22 @@ public sealed partial class InquiryService(
         try
         {
             await crmClient.SyncInquiryAsync(inquiry, cancellationToken);
+            metrics.AddCrmOutcome("succeeded");
         }
         catch (TimeoutRejectedException ex)
         {
             LogCrmIsolatedOutcome(inquiry.Id, "timedOut", ex.GetType().Name);
+            metrics.AddCrmOutcome("timedOut");
         }
         catch (OperationCanceledException)
         {
             LogCrmIsolatedOutcome(inquiry.Id, "cancelled");
+            metrics.AddCrmOutcome("cancelled");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             LogCrmIsolatedOutcome(inquiry.Id, "failed", ex.GetType().Name);
+            metrics.AddCrmOutcome("failed");
         }
     }
 
@@ -153,6 +164,10 @@ public sealed partial class InquiryService(
         CreatedDate = inquiry.CreatedDate,
         UpdatedDate = inquiry.UpdatedDate,
     };
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information,
+        Message = "Inquiry {InquiryId} created")]
+    private partial void LogInquiryCreated(int inquiryId);
 
     [LoggerMessage(EventId = 1, Level = LogLevel.Warning,
         Message = "CRM sync for inquiry {InquiryId} ended with outcome {Outcome}; the stored inquiry is unaffected")]

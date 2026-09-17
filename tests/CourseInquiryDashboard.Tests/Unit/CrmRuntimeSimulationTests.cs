@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using CourseInquiryDashboard.Hosting;
 using CourseInquiryDashboard.Models;
 using CourseInquiryDashboard.Services;
 using CourseInquiryDashboard.Tests.Fixtures;
@@ -197,7 +199,8 @@ public sealed class CrmRuntimeSimulationTests
         var runtime = new CountingRuntime(options);
         var logs = new LogCaptureProvider();
         var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(logs));
-        var client = new SimulatedCrmClient(loggerFactory.CreateLogger<SimulatedCrmClient>(), runtime);
+        var metrics = new InquiryMetrics(new Meter(InquiryMetrics.MeterName));
+        var client = new SimulatedCrmClient(loggerFactory.CreateLogger<SimulatedCrmClient>(), runtime, metrics);
 
         return (runtime, runtime.Recorder.Attempts, client, logs);
     }

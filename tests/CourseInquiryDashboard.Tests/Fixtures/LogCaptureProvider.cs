@@ -26,7 +26,10 @@ public sealed class LogCaptureProvider : ILoggerProvider, ISupportExternalScope
         var forbidden = sentinels.ToArray();
         var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "inquiryId", "attempt", "outcome", "duration", "errorCategory", "errorType", "{OriginalFormat}"
+            // OBS-101 additions: request-outcome/validation entries log request shape and
+            // failing field names only — never attempted values or visitor data.
+            "inquiryId", "attempt", "outcome", "duration", "errorCategory", "errorType",
+            "method", "route", "statusCode", "fields", "{OriginalFormat}"
         };
         foreach (var entry in Entries)
         {

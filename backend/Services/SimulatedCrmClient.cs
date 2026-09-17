@@ -1,3 +1,4 @@
+using CourseInquiryDashboard.Hosting;
 using CourseInquiryDashboard.Models;
 using Microsoft.Extensions.Logging;
 using Polly;
@@ -35,6 +36,7 @@ public sealed partial class SimulatedCrmClient : ICrmClient
     private readonly ILogger<SimulatedCrmClient> logger;
     private readonly CrmSimulationRuntime? runtime;
     private readonly Func<CrmInquiryPayload, int, CancellationToken, Task>? simulation;
+    private readonly InquiryMetrics? metrics;
 
     private readonly ResiliencePipeline pipeline = new ResiliencePipelineBuilder()
         .AddTimeout(new TimeoutStrategyOptions { Timeout = TotalSyncBudget }) // outer budget, never retried
@@ -53,10 +55,12 @@ public sealed partial class SimulatedCrmClient : ICrmClient
     /// <summary>Production constructor: execute the runtime mode selected by configuration/dev tools.</summary>
     public SimulatedCrmClient(
         ILogger<SimulatedCrmClient> logger,
-        CrmSimulationRuntime runtime)
+        CrmSimulationRuntime runtime,
+        InquiryMetrics metrics)
     {
         this.logger = logger;
         this.runtime = runtime;
+        this.metrics = metrics;
     }
 
     /// <summary>Test seam retained for concise scripted attempt outcomes.</summary>
@@ -74,6 +78,13 @@ public sealed partial class SimulatedCrmClient : ICrmClient
     {
         this.logger = logger;
         this.simulation = simulation;
+    }
+
+    /// <summary>Records retry consumption for the OBS-101 CRM metrics; a no-op in seam-constructed clients.</summary>
+    private void RecordRetries(int attempts)
+    {
+        if (attempts > 1)
+            metrics?.CrmSyncRetries.Add(attempts - 1);
     }
 
     public async Task SyncInquiryAsync(CourseInquiry inquiry, CancellationToken cancellationToken = default)
@@ -130,29 +141,34 @@ public sealed partial class SimulatedCrmClient : ICrmClient
 
             LogSyncOutcome(inquiry.Id, "success", attempts);
             RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.Success, attempts);
+            RecordRetries(attempts);
         }
         catch (TimeoutRejectedException)
         {
             LogSyncOutcome(inquiry.Id, "timedOut", attempts);
             RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.TimedOut, attempts);
+            RecordRetries(attempts);
             throw;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             LogSyncOutcome(inquiry.Id, "cancelled", attempts);
             RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.Cancelled, attempts);
+            RecordRetries(attempts);
             throw;
         }
         catch (OperationCanceledException)
         {
             LogSyncOutcome(inquiry.Id, "cancelled", attempts);
             RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.Cancelled, attempts);
+            RecordRetries(attempts);
             throw;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             LogSyncOutcome(inquiry.Id, "failed", ex.GetType().Name, attempts);
             RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.Failed, attempts);
+            RecordRetries(attempts);
             throw;
         }
     }

@@ -1,3 +1,5 @@
+using System.Diagnostics.Metrics;
+using CourseInquiryDashboard.Hosting;
 using CourseInquiryDashboard.Models;
 using CourseInquiryDashboard.Models.Dtos;
 using CourseInquiryDashboard.Services;
@@ -511,6 +513,8 @@ public sealed class InquiryServiceTests
         }
     }
 
+    private static readonly InquiryMetrics Metrics = new(new Meter(InquiryMetrics.MeterName));
+
     private static InquiryService CreateService(
         AppDbContext db,
         MutableTimeProvider? clock = null,
@@ -521,7 +525,7 @@ public sealed class InquiryServiceTests
             ? NullLoggerFactory.Instance
             : LoggerFactory.Create(builder => builder.AddProvider(logs));
         return new InquiryService(db, crm ?? new ScriptedCrmClient(), clock ?? new MutableTimeProvider(),
-            loggerFactory.CreateLogger<InquiryService>());
+            Metrics, loggerFactory.CreateLogger<InquiryService>());
     }
 
     private static CourseInquiry NewRow(int id, Status status, DateTime created) => new()

@@ -6,7 +6,9 @@
 | **Key** | OBS-101 |
 | **Component** | `sub.api` (`backend/Controllers`, `backend/Program.cs`), `sub.app` (`backend/Services`), `sub.webui` (`frontend/src`) |
 | **Priority** | High |
-| **Status** | Open / Backlog |
+| **Status** | Closed / Resolved |
+| **Closed At** | 2026-09-17 |
+| **Resolution** | Implemented GAP-1–7 (GAP-8 Playwright stretch deliberately skipped per §3). Correlation-ID scope middleware (outermost) + root-level RFC 7807 `traceId` extension on 400/500 ProblemDetails; `InvalidModelStateResponseFactory` logs one `validationRejected` warning (EventId 23, field keys only) per rejected request; `Inquiry {InquiryId} created` audit entry (EventId 3) after commit before CRM sync; terminal request-outcome entries for `/api/inquiries` (EventIds 20–22, Info/Warn/Error by status class, never exceptions); `/health` with `AddDbContextCheck<AppDbContext>()` (503 when the store is unreachable); `CourseInquiryDashboard` meter counters (`intake_requests`, `crm_sync_outcomes`, `crm_sync_retries`); SQLite-dialect reconciliation runbook `docs/runbooks/missing-inquiry.md`; visible filtered-state indicator ("Showing N of M inquiries · filtered by X") with one-click Clear filter. Verified by new `ObservabilityApiTests` (IT-OBS-001..005, incl. privacy sentinel scans), frontend `filteredState.test.tsx` (IT-UI-035..037), full suites (backend 167/175 — the 8 SQL Server lane tests fail identically pre-change without `SQLSERVER_TEST_CONNECTION_STRING`; frontend 73/73), and a live browser walkthrough on the built bundle. Contracts updated in `docs/architecture/contracts.md` (C3/C6/C7); prevention paragraph in `written-answers.md` now reflects implemented measures. |
 | **Labels** | `observability`, `logging`, `correlation-id`, `diagnostics`, `troubleshooting`, `prevention`, `backend`, `assessment-gap` |
 
 ---
@@ -229,31 +231,31 @@ Scenario: Filtered view is visually explicit
 
 ## 5. Technical Implementation Tasks
 
-- [ ] **Correlation scope middleware (GAP-2)**
-  - [ ] Outermost middleware in `Program.cs` pushes `HttpContext.TraceIdentifier` into a logger scope for the whole request (must wrap the existing error middleware).
-  - [ ] Add `extensions["traceId"] = context.TraceIdentifier` to the 500 `ProblemDetails` in the error handler and to the `InvalidModelStateResponseFactory` response.
-- [ ] **Validation-rejection logging (GAP-1)**
-  - [ ] Configure `InvalidModelStateResponseFactory` to log one warning per rejected request: outcome `validationRejected`, failing field **keys** only, correlation ID.
-- [ ] **Creation-success audit log (GAP-3)**
-  - [ ] Add `LoggerMessage` (EventId 3, `Information`) in `InquiryService` after `SaveChangesAsync` commits, before CRM sync: `Inquiry {InquiryId} created`.
-- [ ] **Request-outcome middleware (GAP-4)**
-  - [ ] Terminal logging of method, route template, status, outcome, correlation ID for `/api/inquiries` requests; `Information`/`Warning`/`Error` by status class; never attach exceptions (leave 5xx detail to the existing handler).
-- [ ] **Health checks & metrics (GAP-5)**
-  - [ ] `AddHealthChecks().AddDbContextCheck<AppDbContext>()` + `MapHealthChecks("/health")`.
-  - [ ] `System.Diagnostics.Metrics` counters for intake outcomes and CRM outcomes; wire increments next to the existing log call sites.
-- [ ] **Reconciliation runbook (GAP-6)**
-  - [ ] Create `docs/runbooks/missing-inquiry.md` with SQLite-dialect report queries, log queries by correlation ID/outcome, `/health` check, and the stored-but-hidden vs never-stored decision tree.
-- [ ] **Filtered-state indicator (GAP-7)**
-  - [ ] Visible "Showing N of M · filtered by X" indicator + "Clear filter" control in the dashboard; coordinate with A11Y-101 GAP-5 for the live-region announcement.
-- [ ] **Tests**
-  - [ ] Extend `InquiriesApiTests` (using `LogCaptureProvider` / `InquiryApplicationFactory`): 400 → `validationRejected` entry with field keys and correlation ID; 201 → creation entry; shared correlation ID across request-outcome, creation, and CRM entries; `traceId` present in 400/500 ProblemDetails.
-  - [ ] Privacy guard: extend the sentinel scan so no new entry includes visitor field values (email/phone/name/message).
-  - [ ] Health endpoint test (healthy + DB-unavailable 503 path).
-  - [ ] Frontend unit test for the filtered-state indicator.
-  - [ ] Run full suites (`dotnet test`, frontend tests).
-- [ ] **Documentation updates**
-  - [ ] Record the new log events/EventIds and correlation behavior in `docs/architecture/contracts.md` (C3 results/errors, C6 logging privacy).
-  - [ ] Update the Troubleshooting prevention paragraph in `written-answers.md` to reflect implemented (vs aspirational) measures.
+- [x] **Correlation scope middleware (GAP-2)**
+  - [x] Outermost middleware in `Program.cs` pushes `HttpContext.TraceIdentifier` into a logger scope for the whole request (must wrap the existing error middleware).
+  - [x] Add `extensions["traceId"] = context.TraceIdentifier` to the 500 `ProblemDetails` in the error handler and to the `InvalidModelStateResponseFactory` response.
+- [x] **Validation-rejection logging (GAP-1)**
+  - [x] Configure `InvalidModelStateResponseFactory` to log one warning per rejected request: outcome `validationRejected`, failing field **keys** only, correlation ID.
+- [x] **Creation-success audit log (GAP-3)**
+  - [x] Add `LoggerMessage` (EventId 3, `Information`) in `InquiryService` after `SaveChangesAsync` commits, before CRM sync: `Inquiry {InquiryId} created`.
+- [x] **Request-outcome middleware (GAP-4)**
+  - [x] Terminal logging of method, route template, status, outcome, correlation ID for `/api/inquiries` requests; `Information`/`Warning`/`Error` by status class; never attach exceptions (leave 5xx detail to the existing handler).
+- [x] **Health checks & metrics (GAP-5)**
+  - [x] `AddHealthChecks().AddDbContextCheck<AppDbContext>()` + `MapHealthChecks("/health")`.
+  - [x] `System.Diagnostics.Metrics` counters for intake outcomes and CRM outcomes; wire increments next to the existing log call sites.
+- [x] **Reconciliation runbook (GAP-6)**
+  - [x] Create `docs/runbooks/missing-inquiry.md` with SQLite-dialect report queries, log queries by correlation ID/outcome, `/health` check, and the stored-but-hidden vs never-stored decision tree.
+- [x] **Filtered-state indicator (GAP-7)**
+  - [x] Visible "Showing N of M · filtered by X" indicator + "Clear filter" control in the dashboard; coordinate with A11Y-101 GAP-5 for the live-region announcement.
+- [x] **Tests**
+  - [x] Extend `InquiriesApiTests` (using `LogCaptureProvider` / `InquiryApplicationFactory`): 400 → `validationRejected` entry with field keys and correlation ID; 201 → creation entry; shared correlation ID across request-outcome, creation, and CRM entries; `traceId` present in 400/500 ProblemDetails.
+  - [x] Privacy guard: extend the sentinel scan so no new entry includes visitor field values (email/phone/name/message).
+  - [x] Health endpoint test (healthy + DB-unavailable 503 path).
+  - [x] Frontend unit test for the filtered-state indicator.
+  - [x] Run full suites (`dotnet test`, frontend tests).
+- [x] **Documentation updates**
+  - [x] Record the new log events/EventIds and correlation behavior in `docs/architecture/contracts.md` (C3 results/errors, C6 logging privacy).
+  - [x] Update the Troubleshooting prevention paragraph in `written-answers.md` to reflect implemented (vs aspirational) measures.
   - [ ] Optional/stretch (GAP-8): Playwright submit → list test; skip without blocking.
 
 ---

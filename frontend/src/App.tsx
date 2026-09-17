@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { ColorblindToggle } from './components/ColorblindToggle'
 import { CrmSimulationControl } from './components/CrmSimulationControl'
 import { DetailPanel } from './components/DetailPanel'
+import { FilteredStateIndicator } from './components/FilteredStateIndicator'
 import { InquiryTable } from './components/InquiryTable'
 import { LiveRegions, type ToastNotification } from './components/LiveRegions'
 import { Pagination } from './components/Pagination'
@@ -349,6 +350,15 @@ export default function App() {
           tabIndex={-1}
           aria-label="Inquiry queue"
         >
+          {phase.kind === 'ready' && (
+            <FilteredStateIndicator
+              filter={request.filter}
+              shownCount={rows.length}
+              totalCount={envelope?.totalCount ?? 0}
+              onClear={() => setRequest((current) => applyFilterChange(current, 'All'))}
+            />
+          )}
+
           {phase.kind === 'loading' && (
             <p className="list-loading" aria-busy="true">
               Loading inquiries…

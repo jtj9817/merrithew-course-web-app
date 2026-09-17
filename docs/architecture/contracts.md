@@ -107,6 +107,20 @@ must not echo attempted values. Apply the safe logging rules in C6 to exception
 handling too. A disconnected request has no guaranteed HTTP response; do not
 invent a required 499 response or turn cancellation into a claimed 201 (C5).
 
+Observability (OBS-101): every request runs inside an outermost logger scope
+carrying `HttpContext.TraceIdentifier` as `correlationId`, so the
+request-outcome entry, any validation-rejection entry (EventId 23, failing
+field **keys** only), the creation entry (EventId 3), CRM entries, and the
+sanitized 5xx entry for one request all share one identifier. 400
+`ValidationProblemDetails` and 500 `ProblemDetails` responses carry that value
+as a root-level RFC 7807 `traceId` extension member (the flattened
+serialization of `extensions["traceId"]`; nothing quotable is emitted on 2xx).
+Each completed `/api/inquiries` request logs exactly one terminal outcome entry
+(2xx Information / 4xx Warning / 5xx Error, EventIds 20–22) with method, route
+template, status code, and outcome category; exceptions are never attached
+there. `GET /health` (registered with a DbContext check) reports 200 `Healthy`
+or 503 with no database dependency on any other endpoint.
+
 ## C4. Listing, pagination, and concurrent triage
 
 | Parameter | Omitted value | Accepted values |
@@ -198,7 +212,9 @@ can control outcomes without deriving failures from visitor email/message data.
   Exhaustion rethrows to the service's post-commit isolation boundary.
 
 Use an allow-list of log properties: inquiry ID, attempt number, outcome,
-duration, and safe error category/type. **Omit all visitor fields** rather than
+duration, safe error category/type, and (OBS-101) the request shape keys
+`method`, `route`, `statusCode`, and validation field `fields` — property
+names only, never attempted values. **Omit all visitor fields** rather than
 trying to mask an arbitrary DTO. Never attach raw exceptions, messages, inner
 exceptions, DTOs, or visitor-valued scopes to logs. Redaction of email/phone
 alone is insufficient if names or message content disclose the same data.
@@ -207,6 +223,25 @@ Polly telemetry/exception middleware cannot bypass this rule by logging raw
 exceptions. Test rendered messages, structured state, scopes, and exception
 objects at the sink, on success, retry, exhaustion, timeout, and cancellation.
 This is operational logging, not a durable business audit trail.
+
+Log event inventory (OBS-101 adds EventIds 3 and 20–23 to the existing 1–2
+and 10–14):
+
+| Logger category | EventIds | Entries |
+| --- | --- | --- |
+| `CourseInquiryDashboard.Services.InquiryService` | 1, 2 | isolated CRM outcome after commit (pre-existing) |
+| `CourseInquiryDashboard.Services.InquiryService` | 3 | `Inquiry {InquiryId} created` — after the commit, before CRM sync |
+| `CourseInquiryDashboard.Services.SimulatedCrmClient` | 10–14 | CRM attempts and final sync outcome (pre-existing) |
+| `CourseInquiryDashboard.RequestOutcome` | 20, 21, 22 | terminal `/api/inquiries` outcome: 2xx Info / 4xx Warn / 5xx Error; never carries an exception |
+| `CourseInquiryDashboard.Validation` | 23 | automatic-400 rejection: outcome `validationRejected`, failing field keys only |
+| `CourseInquiryDashboard.ErrorHandling` | — | sanitized `Unhandled exception of type {ErrorType}` (pre-existing) |
+
+Outcome counters (OBS-101) are emitted on the `System.Diagnostics.Metrics`
+meter `CourseInquiryDashboard`: `intake_requests` (tag `outcome` =
+`created` | `validationRejected` | `serverError`), `crm_sync_outcomes`
+(`succeeded` | `failed` | `timedOut` | `cancelled`), and `crm_sync_retries`
+(attempt count minus one per sync). Increments sit next to the corresponding
+log call sites, so counters never carry visitor data.
 
 ## C7. Web UI and hosting
 
@@ -220,6 +255,11 @@ does not provide a functional inquiry queue without JavaScript.
   leaving the active filter disappears and totals reconcile. If the current page
   becomes empty above page 1, navigate to the last available page (at least 1)
   and refetch. Distinguish loading, empty store/filter, and request failure.
+- While any status filter other than `All` is active, the queue shows a visible
+  filtered-state indicator — "Showing N of M inquiries · filtered by X" — with a
+  one-click **Clear filter** control, including for an empty filtered result, so
+  a filtered view cannot read as missing data (OBS-101 GAP-7). The live-region
+  announcement of filter changes remains separate (A11Y-101 GAP-5).
 - Ignore stale list/detail responses after a newer selection or unmount. Use
   cancellation plus ordering protection; cancellation alone cannot undo an
   already-completed response. Older results must not overwrite newer state.

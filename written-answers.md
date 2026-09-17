@@ -33,10 +33,15 @@ would only affect the downstream CRM. That rules out a whole layer early.
   or **`5xx`/nothing**? A `400` means validation rejected it (bad email format,
   missing required field, over-length) — it was never stored, and the form should be
   surfacing that error. A `5xx` or no response points at the backend/database.
-- **Backend logs.** Check the app's `ILogger` output for the sanitized
-  unhandled-exception entries (`ErrorType`) from the error middleware
-  ([Program.cs](backend/Program.cs)) and for the per-inquiry CRM outcome logs. Check
-  the web server / reverse-proxy access logs for the `POST` status code and volume.
+- **Backend logs.** Check the app's `ILogger` output: every `/api/inquiries`
+  request logs one terminal outcome entry (status code + outcome, EventIds
+  20–22), rejected submissions log `validationRejected` with the failing field
+  names (EventId 23), stored inquiries log `Inquiry {id} created` (EventId 3),
+  and a CRM failure after commit logs an isolated outcome warning — all for one
+  request sharing a `correlationId` you can quote from any 400/500 response's
+  `traceId` extension ([runbook](docs/runbooks/missing-inquiry.md)). The
+  sanitized unhandled-exception entries (`ErrorType`) from the error middleware
+  ([Program.cs](backend/Program.cs)) cover the 5xx path.
 - **Database / configuration.** Confirm the app is pointed at the expected store —
   a wrong `ConnectionStrings__DefaultConnection` (or a different `inquiries.db` file
   per environment) makes rows "vanish" because the list reads a different database.
@@ -59,12 +64,19 @@ they were hidden by a status filter" vs. "we're still confirming whether they
 reached our system." State what's confirmed, what's still open, and when the next
 update comes; avoid jargon; and if data integrity is in question, say so plainly.
 
-**Preventing recurrence:** an end-to-end test covering submit → list (the flow is
-already covered by `IT-API`/`IT-APP` integration tests, but not from a real form);
-monitoring/alerting on `POST` error rates and on logged CRM failures; making the
-active filter state obvious in the UI so a filtered view isn't mistaken for missing
-data; surfacing validation errors on the submitting form; and a periodic
-reconciliation using the count-by-status / last-7-days reports.
+**Preventing recurrence:** an end-to-end test covering submit → list (covered by
+`IT-API`/`IT-APP` integration tests, plus observability coverage of the submit →
+log → list chain — a real visitor form remains future work, permitted by Part 3);
+monitoring/alerting fed by the implemented `/health` readiness endpoint and the
+`CourseInquiryDashboard` meter counters (`intake_requests` by outcome, CRM
+outcomes and retries); the active filter state is now obvious in the UI ("Showing
+N of M · filtered by X" with a one-click Clear filter) so a filtered view isn't
+mistaken for missing data; validation rejections and server errors are logged
+with a correlation ID, so the "never stored" branch is provable after the fact;
+and a periodic reconciliation using the count-by-status / last-7-days reports
+([runbook with runnable SQLite queries](docs/runbooks/missing-inquiry.md)).
+Surfacing validation errors on the submitting form itself stays future work
+until a public form exists.
 
 ---
 

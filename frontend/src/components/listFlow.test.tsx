@@ -174,7 +174,7 @@ describe('IT-UI-007 paging follows the response envelope', () => {
     await screen.findByRole('row', { name: /First21/ })
     expect(double.calls.at(-1)?.url).toBe('/api/inquiries?status=New&page=2')
     expect(screen.getByText(/page 2 of 3/i)).toBeInTheDocument()
-    expect(screen.getByText(/45 inquiries/)).toBeInTheDocument()
+    expect(screen.getByText(/45 inquiries/, { selector: '.total-count' })).toBeInTheDocument()
 
     double.queueResponse(jsonResponse(200, envelope(makeRows(20, 'New'), { totalCount: 45 })))
     await user.click(screen.getByRole('button', { name: /previous/i }))

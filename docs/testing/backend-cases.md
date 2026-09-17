@@ -1,7 +1,8 @@
 # Backend test-case catalog — DTO, service, HTTP, SQLite, CRM, logging
 
-> **Planned specification — no case here has been executed.** This catalog is the
-> backend half of the [TDD plan](tdd-plan.md) and verifies the boundary contracts
+> **Partially implemented specification.** Phase 0–2 DTO and persistence cases
+> now have executable evidence in the [TDD implementation record](tdd-plan.md#phases-02-implementation-record).
+> This backend catalog verifies boundary contracts
 > [C1–C8](../architecture/contracts.md) recorded in
 > [ADR-0009](../architecture/adr/0009-testable-boundary-contracts.md).
 > REQ/VER identifiers come from the architecture
@@ -39,8 +40,8 @@ Conventions applied to every case:
 - **Do not pin framework wording.** Error `title`/`detail` text, JSON property
   order, and exact problem `type` URLs are never asserted; structure, status
   codes, and `errors` keys are.
-- Every row is **planned**; model verification entries stay `planned` until real
-  runs exist. Case IDs below are the canonical refinement of their REQ/VER.
+- Rows are specifications, not blanket passing claims. See the execution record
+  for covered cases; aggregate model verification entries remain `planned`.
 
 ### Project and trait mapping (per parent TDD plan)
 
@@ -86,8 +87,8 @@ permutation coverage lives here; HTTP cases reuse only representative bodies.
 | UT-VAL-004 | Optional fields (`phone`, `preferredLocation`, `message`): absent/null; separately `""` and `"  x  "` | Validate and inspect bound values | Absent/null validate with value `null`; empty and whitespace variants **validate and are preserved byte-for-byte** — no trim, no case fold, no encode | REQ-API-002 · VER-API-002 · C1 |
 | UT-VAL-005 | Per field, value at exactly the C1 maximum in UTF-16 code units (100/100/254/50/200/200/4000), using ASCII for one variant and a string of surrogate pairs (e.g. 50 surrogate chars = 100 units for `firstName`) for another | Validate | Both variants pass — the limit counts UTF-16 code units, not characters | REQ-API-002 · VER-API-002 · C1 |
 | UT-VAL-006 | Per field, maximum + 1 UTF-16 code unit (repeat the two encodings of UT-VAL-005) | Validate | Each variant fails with `StringLength` error naming the field; nothing truncated silently | REQ-API-002 · VER-API-002 · C1 |
-| UT-VAL-007 | Email variants: `a.b+c@sub.domain.co`, uppercase local part, numeric-only local part, minimal `a@b.cc` | Validate `email` | All pass — the rule is the .NET `[EmailAddress]` format check, not deliverability or a stricter RFC parser | REQ-API-002 · VER-API-002 · C1 |
-| UT-VAL-008 | Email variants: `no-at-symbol`, `two@@ats.com`, `@leading.com`, `trailing@`, `space s@x.com`, `a@b` with empty TLD per .NET semantics | Validate `email` | Each fails with `email` flagged; error does not echo other fields | REQ-API-002 · VER-API-002 · C1 |
+| UT-VAL-007 | Email variants: `a.b+c@sub.domain.co`, uppercase local part, numeric-only local part, minimal `a@b.cc`, `a@b`, `space s@x.com` | Validate `email` | All pass — .NET 10 `[EmailAddress]` accepts a single non-edge `@`; it does not require a dotted domain or reject internal spaces. No deliverability or stricter RFC rule is added. | REQ-API-002 · VER-API-002 · C1 |
+| UT-VAL-008 | Email variants: `no-at-symbol`, `two@@ats.com`, `@leading.com`, `trailing@` | Validate `email` | Each fails with `email` flagged; error does not echo other fields | REQ-API-002 · VER-API-002 · C1 |
 | UT-VAL-009 | Status parser input: each of the five canonical names, each lower/UPPER/mixed-cased, each wrapped in surrounding whitespace (`"  pending "`) | Parse (update-body rule and optional list filter — same parser) | Parses to the defined enum member; canonical output name has contract casing (`Pending`); input casing/whitespace never stored | REQ-APP-002 · VER-APP-002 · C2 |
 | UT-VAL-010 | Status parser inputs: unknown word `Draft`, `""`, `"New,Closed"` (comma list), `0`, `1`, `"0"`, `"1"`, `true`, `[..]` array, `{..}` object | Parse | Every variant is rejected with an invalid-status result — **never** coerced, never defaulted to `New` | REQ-APP-002 · VER-APP-002 · C2 |
 | UT-VAL-011 | `UpdateStatusDto` with `status` absent and separately `null` | Validate | Validation error on `status` (required nullable at the DTO boundary); result is **invalid**, not `New` — a non-nullable enum's silent zero-default must be impossible here | REQ-APP-002 · VER-APP-002 · C2 |

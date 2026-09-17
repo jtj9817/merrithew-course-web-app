@@ -1,9 +1,9 @@
 # Frontend and SQL test cases — Course Inquiry Dashboard
 
-> **Status: planned specifications — no application or test code exists yet.**
-> This catalog documents unit, component-integration, host-integration, and
-> SQL Server test cases for the greenfield Course Inquiry Dashboard. Every case
-> below is **planned**, not passing. It refines the target boundary contracts
+> **Status: partially implemented specifications.** SQL Server cases IT-SQL-001
+> through IT-SQL-008 have passed on a disposable SQL Server; see the
+> [implementation record](tdd-plan.md#phases-02-implementation-record). Frontend
+> and hosting cases below remain **planned**, not passing. This catalog refines the target boundary contracts
 > ([contracts.md](../architecture/contracts.md), C1–C8) and
 > [ADR-0009](../architecture/adr/0009-testable-boundary-contracts.md) into
 > executable case tables, and integrates with the parent plan

@@ -1,9 +1,9 @@
 # TDD extension — Course Inquiry Dashboard
 
-> **Status: planned, not executed.** There is no application, solution, package
-> manifest, or executable test suite yet. This document extends [TODO.md](../../TODO.md),
-> replacing its old “tests at the end / remaining tests as time allows” approach.
-> It does not claim that any test already exists or passes.
+> **Status: partially implemented.** Phases 0–2 now have application and test
+> code; the [implementation record](#phases-02-implementation-record) below
+> distinguishes executed evidence from later-phase planned cases. This document
+> extends [TODO.md](../../TODO.md); tests are not deferred to the end.
 
 ## Scope and source of truth
 
@@ -239,6 +239,52 @@ result, and revision in its evidence/procedure. A verification aggregating unit,
 integration, and manual cases is passing only when **all** required evidence is
 current. Redesigns that invalidate evidence return the verification to planned
 until rerun. Regenerate the architecture pages after model updates.
+
+## Phases 0–2 implementation record
+
+Implemented in the current working tree (no commit was created by this task).
+Runtime: .NET SDK 10.0.112, ASP.NET Core/runtime 10.0.12, EF Core SQLite 10.0.12,
+xUnit 2.9.3, SqlClient 7.0.3. SQL tests ran on a disposable SQL Server 2022
+container (`mcr.microsoft.com/mssql/server:2022-latest`, pulled digest
+`sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090`).
+
+Observed red assertions before their corresponding integration changes:
+
+- `UT-VAL-002`: missing first name produced no validation error with the initial
+  DTO skeleton; the required-field assertion failed before annotations landed.
+- `IT-DATA-001`: migration execution left zero inquiry tables before the initial
+  migration was generated; the expected table-count assertion failed.
+- `DTO-HTTP-007/008/009` status/response checks: three HTTP tests failed before
+  registering the explicit status JSON converter in the production MVC options.
+
+Green commands and evidence:
+
+| Command / surface | Observed result |
+| --- | --- |
+| `dotnet test --filter 'Category!=SqlServer'` | 91 passed, 0 failed, 0 skipped |
+| `dotnet test --no-build --filter 'Category=SqlServer'` with disposable-server environment | 8 passed, 0 failed, 0 skipped |
+| `dotnet run --project backend --no-build --no-launch-profile` with an isolated SQLite file | Startup migrated before listening; Swagger document and UI returned HTTP 200; a synthetic row survived a stopped/restarted process |
+
+Test paths: `tests/CourseInquiryDashboard.Tests/Unit/`,
+`Integration/PersistenceTests.cs`, `Integration/DtoHttpTests.cs`, and
+`SqlServer/CourseInquirySqlScriptTests.cs`. The SQL lane executes the shipped
+script and its extracted query text on SQL Server, not SQLite or copied queries.
+These results do not claim separate pre-implementation red runs for every
+catalog permutation.
+
+The fatal-migration test initially hung when a test migration threw while EF
+was generating operations: SQLite retained its migration-lock row. The fixture
+now injects a genuinely failing SQL operation during migration execution. The
+host fails fatally, the migration is not recorded, existing data survives, and
+the normal host restarts successfully. No production lock-clearing workaround
+was added.
+
+DTO HTTP tests mount test-only controllers through the real MVC configuration.
+Their `DTO-HTTP-*` IDs deliberately do **not** claim completion of `IT-API-*`
+resource workflows. The service-side portion of `UT-VAL-012`, commit-before-CRM,
+CRUD, list paging behavior, and all dashboard behavior remain later-phase work.
+`UT-VAL-012` currently proves only direct DTO membership rejection. Broad
+REQ/VER model entries remain `planned` until every mapped case has evidence.
 
 ## Primary guidance used
 

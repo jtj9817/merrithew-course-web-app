@@ -1,7 +1,8 @@
 # TODO — Course Inquiry Dashboard
 
-Implementation checklist for the target design; no application or executable test
-suite exists yet. **ADR** = decision record in `docs/architecture/adr/`;
+Implementation checklist for the target design. **Phases 0–2 are implemented and
+verified**; service, CRM, inquiry endpoints, and dashboard work remain below.
+**ADR** = decision record in `docs/architecture/adr/`;
 **REQ/VER** = requirement / verification in `docs/architecture/model.json`.
 The load-bearing rule is **persist first, sync second**.
 
@@ -24,28 +25,33 @@ query semantics. All listed verification statuses remain **planned** until run.
 
 ## Phase 0 — Solution scaffolding
 
-- [ ] Create the .NET 10 solution and Web API project under `backend/` (`dotnet new webapi --use-controllers`, not minimal API) — ADR-0002
-- [ ] Add `tests/CourseInquiryDashboard.Tests` with xUnit, backend reference, Unit/Integration/SqlServer groups, `Category` and `CaseId` traits — ADR-0002, 0009
-- [ ] Add a solution file wiring `backend/` + `tests/`
-- [ ] Add compatible .NET 10 packages: EF Core + SQLite, Polly, Swagger/OpenAPI, `Microsoft.AspNetCore.Mvc.Testing`, xUnit runner/Test SDK, controlled-time testing support, and SqlClient for the separate SQL test lane — ADR-0003, 0007, 0009
-- [ ] Establish isolated SQLite/host fixtures, synthetic inputs, controlled clock/CRM, and full structured-log capture; do not use mocked DbSet or EF InMemory for query evidence
-- [ ] Confirm build and test discovery work; observe the first catalog test's intended red assertion (an empty suite is not feature evidence)
+- [x] Create the .NET 10 solution and Web API project under `backend/` (`dotnet new webapi --use-controllers`, not minimal API) — ADR-0002
+- [x] Add `tests/CourseInquiryDashboard.Tests` with xUnit, backend reference, Unit/Integration/SqlServer groups, `Category` and `CaseId` traits — ADR-0002, 0009
+- [x] Add a solution file wiring `backend/` + `tests/`
+- [x] Add compatible .NET 10 packages: EF Core + SQLite, Polly, Swagger/OpenAPI, `Microsoft.AspNetCore.Mvc.Testing`, xUnit runner/Test SDK, controlled-time testing support, and SqlClient for the separate SQL test lane — ADR-0003, 0007, 0009
+- [x] Establish isolated SQLite/host fixtures, synthetic inputs, controlled clock/CRM, and full structured-log capture; do not use mocked DbSet or EF InMemory for query evidence
+- [x] Confirm build and test discovery work; observe the first catalog test's intended red assertion (an empty suite is not feature evidence)
 
 ## Phase 1 — Domain & persistence — ADR-0003
 
-- [ ] `Status` enum: New, Contacted, Pending, Registered, Closed (New = default) — REQ-APP-001
-- [ ] `CourseInquiry` entity: int identity Id, First/Last/Email/Phone/CourseName/PreferredLocation/Message, Status, CreatedDate, UpdatedDate — see `docs/domain/course-inquiry.md`
-- [ ] `AppDbContext` mapping: required/null columns, C1 lengths, named status conversion/constraint, UTC read semantics; email is not unique — C8
-- [ ] Initial EF migration applied at startup; verify empty-file migration, repeat startup/data survival, and fatal migration failure — VER-DATA-003
-- [ ] `database/database.sql` (SQL Server dialect + SQLite note): matching DDL, ≥5 synthetic samples, and the C8 last-seven-days, count-by-status, normalized-duplicate-email queries — VER-DATA-002
-- [ ] Write then pass VER-DATA-001 persistence/UTC round-trip cases using fresh contexts; execute SQL-script cases separately on SQL Server, not SQLite
+- [x] `Status` enum: New, Contacted, Pending, Registered, Closed (New = default) — REQ-APP-001
+- [x] `CourseInquiry` entity: int identity Id, First/Last/Email/Phone/CourseName/PreferredLocation/Message, Status, CreatedDate, UpdatedDate — see `docs/domain/course-inquiry.md`
+- [x] `AppDbContext` mapping: required/null columns, C1 lengths, named status conversion/constraint, UTC read semantics; email is not unique — C8
+- [x] Initial EF migration applied at startup; verify empty-file migration, repeat startup/data survival, and fatal migration failure — VER-DATA-003
+- [x] `database/database.sql` (SQL Server dialect + SQLite note): matching DDL, ≥5 synthetic samples, and the C8 last-seven-days, count-by-status, normalized-duplicate-email queries — VER-DATA-002
+- [x] Write then pass VER-DATA-001 persistence/UTC round-trip cases using fresh contexts; execute SQL-script cases separately on SQL Server, not SQLite
 
 ## Phase 2 — DTOs & validation — ADR-0005
 
-- [ ] `CreateInquiryDto`: explicit required fields, email validation, C1 length boundaries/optional preservation; ignore unknown/server-owned JSON fields — REQ-API-002
-- [ ] `UpdateStatusDto`: required nullable status, explicit name-only conversion and membership validation; reject missing/null/numeric/composite values — REQ-APP-002, C2
-- [ ] `InquiryResponse` and page-envelope DTOs; camelCase JSON, canonical status names, nullable fields, UTC timestamps; don't expose the entity — C1, C4
-- [ ] Write unit validation cases before DTO behavior; prove representative binding/serialization/400 ProblemDetails through HTTP integration — VER-API-002, VER-APP-002
+- [x] `CreateInquiryDto`: explicit required fields, email validation, C1 length boundaries/optional preservation; ignore unknown/server-owned JSON fields — REQ-API-002
+- [x] `UpdateStatusDto`: required nullable status, explicit name-only conversion and membership validation; reject missing/null/numeric/composite values — REQ-APP-002, C2
+- [x] `InquiryResponse` and page-envelope DTOs; camelCase JSON, canonical status names, nullable fields, UTC timestamps; don't expose the entity — C1, C4
+- [x] Write unit validation cases before DTO behavior; prove representative binding/serialization/400 ProblemDetails through HTTP integration — VER-API-002, VER-APP-002
+
+Evidence and scope: [implementation record](docs/testing/tdd-plan.md#phases-02-implementation-record).
+HTTP validation uses test-only controllers through the real MVC host; it does not
+claim the Phase 5 inquiry routes or the Phase 3 service guard are implemented.
+Aggregate model verifications remain planned pending all mapped later-phase cases.
 
 ## Phase 3 — Application/service layer — ADR-0005
 

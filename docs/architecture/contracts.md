@@ -1,7 +1,7 @@
 # Boundary contracts and edge cases
 
-> **Target design — not implemented.** This document closes unspecified behavior
-> in the [assessment](../../option-1-course-inquiry-dashboard.md) and existing
+> **Target design — partially implemented through TODO Phases 0–2.** This document
+> closes unspecified behavior in the [assessment](../../option-1-course-inquiry-dashboard.md) and existing
 > ADRs. Numeric limits, wire shapes, retry timings, and no-op semantics below are
 > **project decisions**, not requirements quoted from the assessment.
 > [ADR-0009](adr/0009-testable-boundary-contracts.md) records this refinement.
@@ -9,7 +9,7 @@
 > this file owns externally observable technical contracts. The architecture
 > [model](model.json) owns REQ/VER identifiers and allocation, not duplicate API
 > schemas. [TDD plan](../testing/tdd-plan.md) and its case catalogs verify these
-> contracts; all cases and model verifications remain planned.
+> contracts; the execution record distinguishes passing cases from planned work.
 
 ## C1. Intake validation and representation
 

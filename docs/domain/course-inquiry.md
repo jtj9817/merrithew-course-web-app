@@ -4,7 +4,7 @@ The bounded context is a single internal tool: staff at Merrithew triage **cours
 registration inquiries** that visitors submit from the public website. Each
 creation attempts a best-effort simulated CRM sync after the inquiry is stored.
 
-> **Target specification — not implemented.** No application code exists yet.
+> **Target specification — entity, persistence, and DTO validation implemented.**
 > Assessment requirements cite `option-1-course-inquiry-dashboard.md` as
 > `spec:<line>`; decisions filling its gaps are identified separately through
 > ADRs. [ADR-0009](../architecture/adr/0009-testable-boundary-contracts.md) and
@@ -78,8 +78,8 @@ changing timestamps. See [contract C2](../architecture/contracts.md#c2-status-an
 ## Rules
 
 Assessment-mandated rules cite the spec; refinements cite the boundary contracts.
-None are enforced in code yet. Tests must demonstrate observable behavior rather
-than infer success from this checklist.
+> Entity/storage and DTO rules have Phase 0–2 evidence; service/CRM/API behavior
+> remains planned. See the [execution record](../testing/tdd-plan.md#phases-02-implementation-record).
 
 - **Default status is `New`.** A newly created inquiry always starts at `New`,
   regardless of client input. (`spec:45`)

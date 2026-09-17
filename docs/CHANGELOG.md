@@ -7,6 +7,22 @@ tagged (it's a single assessment deliverable), so changes are grouped under
 
 ## [Unreleased]
 
+### Added — runtime CRM simulation controls (September 17, 2026)
+
+- **Selectable simulated CRM outcome at runtime**: `CrmSimulation` configuration
+  (validated at startup) and an opt-in `/api/dev/crm-simulation` endpoint group
+  (`Development`, or `DevTools:CrmSimulation=true`) choose among `Success`,
+  `TransientThenSuccess`, `AlwaysTransientFailure`, `PermanentFailure`,
+  `Timeout`, and `InternalCancellation`. The simulated external boundary now
+  receives an explicit CRM payload; per-attempt settings are snapshotted per
+  sync. Safe, non-PII sync results (inquiry id, mode, outcome, attempts) are
+  exposed for the upcoming dashboard demonstrator.
+- **CRM-originated cancellation isolated**: an `OperationCanceledException`
+  thrown by the CRM itself can no longer escape inquiry creation after the
+  commit — the row and the `201` response are kept. The dashboard island
+  control for these modes is planned under
+  [Phase 10](../TODO.md) (see the [plan](plans/crm-simulation-plan.md)).
+
 ### Added — initial build (through September 17, 2026)
 
 The full Course Inquiry Dashboard, delivered as one ASP.NET Core deployable over a

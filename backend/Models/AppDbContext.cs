@@ -1,3 +1,4 @@
+using CourseInquiryDashboard.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -8,7 +9,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     /// <summary>Named CHECK constraint keeping stored status names within the five contract values (C2, C8).</summary>
     public const string StatusCheckConstraintName = "CK_CourseInquiries_Status";
 
-    private const string StatusValuesSql = "Status IN ('New', 'Contacted', 'Pending', 'Registered', 'Closed')";
+    // Derived from the single status vocabulary so it cannot drift from the enum (C2, C8).
+    // Produces the exact literal frozen in the initial migration/snapshot:
+    // Status IN ('New', 'Contacted', 'Pending', 'Registered', 'Closed').
+    private static readonly string StatusValuesSql =
+        $"Status IN ({string.Join(", ", StatusNames.All.Select(name => $"'{name}'"))})";
 
     /// <summary>
     /// UTC <see cref="DateTime"/> semantics (C8): SQLite stores timestamps without a kind, so a

@@ -1,5 +1,5 @@
 import type { FetchOutcome, RecordOutcome } from './fetchOutcome'
-import { classifyRecordResponse, classifyResponse } from './fetchOutcome'
+import { classifyFailure, classifyRecordResponse, classifyResponse } from './fetchOutcome'
 import { serializeListQuery } from './listQuery'
 import type { ListQueryState } from './listQuery'
 import type { StatusName } from './types'
@@ -15,8 +15,8 @@ export async function fetchInquiryPage(
       headers: { Accept: 'application/json' },
     })
     return await classifyResponse(response)
-  } catch {
-    return { kind: 'generic' }
+  } catch (error) {
+    return classifyFailure(error)
   }
 }
 
@@ -28,8 +28,8 @@ export async function fetchInquiry(id: number, signal?: AbortSignal): Promise<Re
       headers: { Accept: 'application/json' },
     })
     return await classifyRecordResponse(response)
-  } catch {
-    return { kind: 'generic' }
+  } catch (error) {
+    return classifyFailure(error)
   }
 }
 
@@ -42,7 +42,7 @@ export async function putInquiryStatus(id: number, status: StatusName): Promise<
       body: JSON.stringify({ status }),
     })
     return await classifyRecordResponse(response)
-  } catch {
-    return { kind: 'generic' }
+  } catch (error) {
+    return classifyFailure(error)
   }
 }

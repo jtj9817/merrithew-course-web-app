@@ -43,7 +43,7 @@ public sealed class ListInquiriesQueryDto : IValidatableObject
 
         if (Status is not null && !StatusNames.TryParse(Status, out _))
             yield return new ValidationResult(
-                "status must be one of: New, Contacted, Pending, Registered, Closed.", ["status"]);
+                $"status must be one of: {StatusNames.CommaSeparated}.", ["status"]);
 
         if (Sort is not null && Sort is not (SortDesc or SortAsc))
             yield return new ValidationResult($"sort must be '{SortDesc}' or '{SortAsc}'.", ["sort"]);

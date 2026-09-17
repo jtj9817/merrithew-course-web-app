@@ -18,6 +18,9 @@ public static class StatusNames
     /// <summary>Canonical names in enum declaration order.</summary>
     public static IReadOnlyList<string> All { get; } = Array.AsReadOnly(Enum.GetNames<Status>());
 
+    /// <summary>The canonical names as a comma-separated list, for human-readable messages.</summary>
+    public static string CommaSeparated { get; } = string.Join(", ", All);
+
     private static readonly Dictionary<string, Status> ByName =
         All.ToDictionary(name => name, Enum.Parse<Status>, StringComparer.OrdinalIgnoreCase);
 

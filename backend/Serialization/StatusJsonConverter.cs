@@ -18,8 +18,8 @@ namespace CourseInquiryDashboard.Serialization;
 /// </remarks>
 public sealed class StatusJsonConverter : JsonConverter<Status>
 {
-    private const string InvalidStatusMessage =
-        "The status must be one of the defined names (New, Contacted, Pending, Registered, Closed).";
+    private static readonly string InvalidStatusMessage =
+        $"The status must be one of the defined names ({StatusNames.CommaSeparated}).";
 
     public override Status Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

@@ -59,8 +59,12 @@ export async function classifyRecordResponse(response: Response): Promise<Record
   return problemOutcome(response.status, body)
 }
 
-/** Network-level failures and thrown errors get the generic recoverable path. */
-export function classifyFailure(_error: unknown): FetchOutcome {
+/**
+ * Network-level failures and thrown errors get the generic recoverable path.
+ * The narrow return type is assignable to both {@link FetchOutcome} and
+ * {@link RecordOutcome}, so every transport catch can route through here.
+ */
+export function classifyFailure(_error: unknown): Extract<ApiOutcome, { kind: 'generic' }> {
   return { kind: 'generic' }
 }
 

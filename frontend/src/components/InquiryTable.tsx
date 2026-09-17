@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { formatIsoDate, displayName } from '../lib/format'
 import { STATUS_NAMES } from '../lib/types'
 import type { Inquiry, StatusName } from '../lib/types'
+import { StatusBadge } from './StatusBadge'
 
 interface InquiryTableProps {
   items: Inquiry[]
   fetching: boolean
   mutatingIds: readonly number[]
+  colorblind?: boolean
   onOpenDetail: (id: number, opener: HTMLElement) => void
   onApplyStatus: (id: number, next: StatusName) => void
 }
@@ -15,6 +17,7 @@ export function InquiryTable({
   items,
   fetching,
   mutatingIds,
+  colorblind = false,
   onOpenDetail,
   onApplyStatus,
 }: InquiryTableProps) {
@@ -37,6 +40,7 @@ export function InquiryTable({
               key={inquiry.id}
               inquiry={inquiry}
               mutating={mutatingIds.includes(inquiry.id)}
+              colorblind={colorblind}
               onOpenDetail={onOpenDetail}
               onApplyStatus={onApplyStatus}
             />
@@ -50,11 +54,12 @@ export function InquiryTable({
 interface InquiryRowProps {
   inquiry: Inquiry
   mutating: boolean
+  colorblind?: boolean
   onOpenDetail: (id: number, opener: HTMLElement) => void
   onApplyStatus: (id: number, next: StatusName) => void
 }
 
-function InquiryRow({ inquiry, mutating, onOpenDetail, onApplyStatus }: InquiryRowProps) {
+function InquiryRow({ inquiry, mutating, colorblind, onOpenDetail, onApplyStatus }: InquiryRowProps) {
   const [draft, setDraft] = useState<StatusName>(inquiry.status)
   const name = displayName(inquiry)
 
@@ -85,9 +90,7 @@ function InquiryRow({ inquiry, mutating, onOpenDetail, onApplyStatus }: InquiryR
       <td className="cell-course">{inquiry.courseName}</td>
       <td className="cell-status">
         <div className="status-cell">
-          <span className={`status-badge status-${inquiry.status.toLowerCase()}`}>
-            {inquiry.status}
-          </span>
+          <StatusBadge status={inquiry.status} colorblind={colorblind} />
           <select
             aria-label={`Status for ${name}`}
             name={`inquiry-${inquiry.id}-status`}

@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { formatIsoDate } from '../lib/format'
 import type { DetailState } from '../lib/types'
+import { StatusBadge } from './StatusBadge'
 
 interface DetailPanelProps {
   detail: DetailState
+  colorblind?: boolean
   onClose: () => void
 }
 
@@ -14,7 +16,7 @@ interface DetailPanelProps {
  * Background content is inert while open and body scroll is locked.
  * Focus trap cycles Tab/Shift+Tab inside the dialog.
  */
-export function DetailPanel({ detail, onClose }: DetailPanelProps) {
+export function DetailPanel({ detail, colorblind = false, onClose }: DetailPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const focusTarget = detail.kind === 'closed' ? null : detail.id
 
@@ -150,9 +152,7 @@ export function DetailPanel({ detail, onClose }: DetailPanelProps) {
             <div className="detail-field">
               <dt>Status</dt>
               <dd>
-                <span className={`status-badge status-${detail.inquiry.status.toLowerCase()}`}>
-                  {detail.inquiry.status}
-                </span>
+                <StatusBadge status={detail.inquiry.status} colorblind={colorblind} />
               </dd>
             </div>
             <div className="detail-field">

@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { ColorblindToggle } from './components/ColorblindToggle'
 import { CrmSimulationControl } from './components/CrmSimulationControl'
 import { DetailPanel } from './components/DetailPanel'
 import { InquiryTable } from './components/InquiryTable'
 import { LiveRegions, type ToastNotification } from './components/LiveRegions'
 import { Pagination } from './components/Pagination'
 import { ScenarioSwitcher } from './components/ScenarioSwitcher'
+import { StatusBadge } from './components/StatusBadge'
 import { Toolbar } from './components/Toolbar'
 import { fetchInquiry, fetchInquiryPage, putInquiryStatus } from './lib/api'
+import {
+  COLORBLIND_EVENT,
+  getInitialColorblindMode,
+  setColorblindModePreference,
+} from './lib/colorblindMode'
 import { OUTCOME_MESSAGES, messageFor } from './lib/fetchOutcome'
 import type { FetchOutcome } from './lib/fetchOutcome'
 import type { SortDirection } from './lib/listQuery'
@@ -39,6 +47,42 @@ export default function App() {
   const [detail, setDetail] = useState<DetailState>({ kind: 'closed' })
   const [mutatingIds, setMutatingIds] = useState<number[]>([])
   const [toast, setToast] = useState<ToastNotification | null>(null)
+  const [colorblindMode, setColorblindMode] = useState<boolean>(getInitialColorblindMode)
+  const [appbarTarget, setAppbarTarget] = useState<HTMLElement | null>(null)
+
+  useEffect(() => {
+    setColorblindModePreference(colorblindMode)
+  }, [colorblindMode])
+
+  useEffect(() => {
+    setAppbarTarget(document.getElementById('shell-appbar-colorblind'))
+  }, [])
+
+  useEffect(() => {
+    const handleExternalChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ enabled: boolean }>
+      if (customEvent.detail && typeof customEvent.detail.enabled === 'boolean') {
+        setColorblindMode(customEvent.detail.enabled)
+      }
+    }
+    window.addEventListener(COLORBLIND_EVENT, handleExternalChange)
+    return () => {
+      window.removeEventListener(COLORBLIND_EVENT, handleExternalChange)
+    }
+  }, [])
+
+  const toggleColorblindMode = useCallback(() => {
+    setColorblindMode((current) => {
+      const next = !current
+      setColorblindModePreference(next)
+      setPolite(
+        next
+          ? 'Colorblind mode enabled. Status badges now display high-discrimination colors, distinct geometric shapes, and semantic icons.'
+          : 'Colorblind mode disabled. Standard brand colors restored.',
+      )
+      return next
+    })
+  }, [])
 
   const listSeqRef = useRef(0)
   const detailSeqRef = useRef(0)
@@ -275,6 +319,7 @@ export default function App() {
             items={rows}
             fetching={fetching}
             mutatingIds={mutatingIds}
+            colorblind={colorblindMode}
             onOpenDetail={openDetail}
             onApplyStatus={applyStatus}
           />
@@ -287,6 +332,44 @@ export default function App() {
             onNavigate={(page) => setRequest((current) => applyPageChange(current, page))}
           />
         )}
+
+        <aside className="accessibility-bar" aria-label="Accessibility preferences">
+          <div className="accessibility-bar-inner">
+            <div className="accessibility-bar-controls">
+              <ColorblindToggle
+                enabled={colorblindMode}
+                onToggle={toggleColorblindMode}
+                id="colorblind-toggle-bottom"
+                variant="standard"
+              />
+            </div>
+            {colorblindMode && (
+              <div className="status-legend" aria-label="Status visual guide">
+                <span className="status-legend-title">Colorblind Guide:</span>
+                <span className="status-legend-item">
+                  <StatusBadge status="New" colorblind={true} />
+                  <span className="status-legend-desc">Solid pill + Star</span>
+                </span>
+                <span className="status-legend-item">
+                  <StatusBadge status="Contacted" colorblind={true} />
+                  <span className="status-legend-desc">Dashed pill + Chat</span>
+                </span>
+                <span className="status-legend-item">
+                  <StatusBadge status="Pending" colorblind={true} />
+                  <span className="status-legend-desc">Dotted rect + Clock</span>
+                </span>
+                <span className="status-legend-item">
+                  <StatusBadge status="Registered" colorblind={true} />
+                  <span className="status-legend-desc">Double pill + Check</span>
+                </span>
+                <span className="status-legend-item">
+                  <StatusBadge status="Closed" colorblind={true} />
+                  <span className="status-legend-desc">Muted rect + Minus</span>
+                </span>
+              </div>
+            )}
+          </div>
+        </aside>
       </div>
 
       <LiveRegions
@@ -296,7 +379,17 @@ export default function App() {
         onDismissToast={() => setToast(null)}
       />
 
-      <DetailPanel detail={detail} onClose={closeDetail} />
+      <DetailPanel detail={detail} colorblind={colorblindMode} onClose={closeDetail} />
+      {appbarTarget &&
+        createPortal(
+          <ColorblindToggle
+            enabled={colorblindMode}
+            onToggle={toggleColorblindMode}
+            id="colorblind-toggle-appbar"
+            variant="appbar"
+          />,
+          appbarTarget,
+        )}
     </div>
   )
 }

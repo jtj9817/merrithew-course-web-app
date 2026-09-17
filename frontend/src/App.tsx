@@ -186,8 +186,10 @@ export default function App() {
               `Filtered by ${filterLabel}: ${envelope.totalCount} matching ${countWord} found`,
             )
           } else if (pageChanged) {
+            const pageItemCount = envelope.items.length
+            const pageWord = pageItemCount === 1 ? 'inquiry' : 'inquiries'
             setPolite(
-              `Page ${envelope.page} (of ${lastPage}) loaded, showing ${envelope.totalCount} matching ${countWord}`,
+              `Page ${envelope.page} (of ${lastPage}) loaded, showing ${pageItemCount} matching ${pageWord}`,
             )
           }
         }
@@ -342,41 +344,47 @@ export default function App() {
           }}
         />
 
-        {phase.kind === 'loading' && (
-          <p className="list-loading" aria-busy="true">
-            Loading inquiries…
-          </p>
-        )}
+        <section
+          id="inquiry-queue"
+          tabIndex={-1}
+          aria-label="Inquiry queue"
+        >
+          {phase.kind === 'loading' && (
+            <p className="list-loading" aria-busy="true">
+              Loading inquiries…
+            </p>
+          )}
 
-        {phase.kind === 'error' && (
-          <div className="load-error">
-            <p className="load-error-message">{assertive}</p>
-            <button type="button" className="retry" onClick={() => refreshList('other')}>
-              Retry
-            </button>
-          </div>
-        )}
+          {phase.kind === 'error' && (
+            <div className="load-error">
+              <p className="load-error-message">{assertive}</p>
+              <button type="button" className="retry" onClick={() => refreshList('other')}>
+                Retry
+              </button>
+            </div>
+          )}
 
-        {phase.kind === 'ready' && rows.length === 0 && (
-          <p className="empty-message">
-            {request.filter === 'All'
-              ? 'No inquiries yet. New submissions appear here as staff review them.'
-              : 'No inquiries match this filter. Choose a different status or show all statuses.'}
-          </p>
-        )}
+          {phase.kind === 'ready' && rows.length === 0 && (
+            <p className="empty-message">
+              {request.filter === 'All'
+                ? 'No inquiries yet. New submissions appear here as staff review them.'
+                : 'No inquiries match this filter. Choose a different status or show all statuses.'}
+            </p>
+          )}
 
-        {phase.kind === 'ready' && rows.length > 0 && (
-          <InquiryTable
-            items={rows}
-            fetching={fetching}
-            mutatingIds={mutatingIds}
-            failedIds={failedIds}
-            sort={sort}
-            colorblind={colorblindMode}
-            onOpenDetail={openDetail}
-            onApplyStatus={applyStatus}
-          />
-        )}
+          {phase.kind === 'ready' && rows.length > 0 && (
+            <InquiryTable
+              items={rows}
+              fetching={fetching}
+              mutatingIds={mutatingIds}
+              failedIds={failedIds}
+              sort={sort}
+              colorblind={colorblindMode}
+              onOpenDetail={openDetail}
+              onApplyStatus={applyStatus}
+            />
+          )}
+        </section>
 
         {phase.kind !== 'error' && (
           <Pagination

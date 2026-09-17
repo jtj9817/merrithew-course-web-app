@@ -28,8 +28,6 @@ export function InquiryTable({
   return (
     <div className="table-wrap">
       <table
-        id="inquiry-queue"
-        tabIndex={-1}
         className="inquiry-table"
         aria-busy={fetching || undefined}
       >

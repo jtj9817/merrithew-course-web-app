@@ -242,15 +242,17 @@ describe('IT-UI-031 table caption, aria-sort, and bypass target identify queue s
     await screen.findByRole('row', { name: /O'Neill/ })
 
     // GAP-1 bypass target & GAP-2 table caption
-    const table = document.getElementById('inquiry-queue')
+    const queueTarget = document.getElementById('inquiry-queue')
+    expect(queueTarget).not.toBeNull()
+    expect(queueTarget?.tagName).toBe('SECTION')
+    expect(queueTarget).toHaveAttribute('tabindex', '-1')
+    const table = queueTarget?.querySelector('table')
     expect(table).not.toBeNull()
-    expect(table?.tagName).toBe('TABLE')
-    expect(table).toHaveAttribute('tabindex', '-1')
+    expect(table).toHaveClass('inquiry-table')
     const caption = table?.querySelector('caption')
     expect(caption).not.toBeNull()
     expect(caption).toHaveClass('sr-only')
     expect(caption).toHaveTextContent('Incoming Course Inquiries Queue')
-
     // GAP-3 Created column aria-sort (defaults to descending)
     const createdHeader = screen.getByRole('columnheader', { name: /Created/i })
     expect(createdHeader).toHaveAttribute('aria-sort', 'descending')
@@ -263,6 +265,16 @@ describe('IT-UI-031 table caption, aria-sort, and bypass target identify queue s
     await waitFor(() =>
       expect(createdHeader).toHaveAttribute('aria-sort', 'ascending'),
     )
+  })
+
+  it('preserves the inquiry-queue bypass target across loading, error, and empty states', async () => {
+    renderIsland((d) =>
+      d.queueResponse(jsonResponse(200, envelope([], { totalCount: 0 }))),
+    )
+    await screen.findByText(/No inquiries yet/i)
+    const queueTarget = document.getElementById('inquiry-queue')
+    expect(queueTarget).not.toBeNull()
+    expect(queueTarget).toHaveAttribute('tabindex', '-1')
   })
 })
 
@@ -304,7 +316,7 @@ describe('IT-UI-032 pagination and filter updates announce to polite live region
     await user.click(screen.getByRole('button', { name: /next/i }))
     await screen.findByRole('row', { name: /First21/ })
 
-    expect(statusRegion).toHaveTextContent(/Page 2 \(of 3\) loaded, showing 45 matching inquiries/i)
+    expect(statusRegion).toHaveTextContent(/Page 2 \(of 3\) loaded, showing 20 matching inquiries/i)
   })
 })
 

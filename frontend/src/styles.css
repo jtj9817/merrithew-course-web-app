@@ -300,6 +300,10 @@ button:disabled {
   outline-offset: 2px;
 }
 
+#inquiry-queue:focus {
+  outline: none;
+}
+
 /* ── Screen Reader Utility ───────────────────────────────────────────────── */
 
 .sr-only {

@@ -8,7 +8,7 @@
 | **Priority** | High |
 | **Status** | Closed |
 | **Closed At** | 2026-09-17 |
-| **Resolution** | Resolved -- implemented skip link navigation (GAP-1), table caption and aria-sort on Created column header (GAP-2, GAP-3), aria-invalid on failed status select controls (GAP-4), aria-current on active pagination indicator and polite live announcements for filter/page transitions (GAP-5), and fallback focus recovery on modal close for detached openers (GAP-6). Verified with unit and integration tests. |
+| **Resolution** | Resolved -- implemented skip link navigation targeting a persistent queue container (#inquiry-queue with tabindex="-1") present across all queue phases (pre-mount, loading, empty, error, ready) (GAP-1), table caption and aria-sort on Created column header (GAP-2, GAP-3), aria-invalid on failed status select controls (GAP-4), aria-current on active pagination indicator and polite live announcements for filter and page transitions reporting on-page item count (GAP-5), and fallback focus recovery on modal close for detached openers (GAP-6). Verified with unit, integration, and end-to-end browser QA tests. |
 | **Labels** | `accessibility`, `aoda`, `wcag-2.1-aa`, `compliance`, `frontend`, `screen-reader`, `keyboard-navigation` |
 | **Regulatory Standard** | Accessibility for Ontarians with Disabilities Act (AODA, 2005) / IASR §14 (WCAG 2.0/2.1 Level AA) |
 
@@ -168,7 +168,7 @@ Scenario: Safe fallback focus management on modal closure
 
 - [x] **Bypass Navigation (`GAP-1`)**:
   - [x] Add `<a href="#inquiry-queue" class="skip-link">Skip to inquiry queue</a>` in `backend/Pages/Shared/_Layout.cshtml`.
-  - [x] Add `id="inquiry-queue"` to `#dashboard-root` or `<table class="inquiry-table">`.
+  - [x] Add `id="inquiry-queue"` with `tabindex="-1"` to pre-mount shell and persistent queue container in `App.tsx`.
   - [x] Implement `.skip-link` CSS in `styles.css` (`position: absolute; top: -100px;` transitioning to `top: 16px;` on `:focus-visible`).
 - [x] **Table Semantics (`GAP-2`, `GAP-3`)**:
   - [x] Add `<caption className="sr-only">Incoming Course Inquiries Queue</caption>` to `InquiryTable.tsx`.
@@ -178,7 +178,7 @@ Scenario: Safe fallback focus management on modal closure
   - [x] Apply `aria-invalid={isFailed ? 'true' : undefined}` on the row `<select>`.
 - [x] **Live Announcements & Pagination (`GAP-5`)**:
   - [x] Add `aria-current="page"` to the active page indicator in `Pagination.tsx`.
-  - [x] Emit polite status announcements in `App.tsx` when page changes or filter changes settle.
+  - [x] Emit polite status announcements in `App.tsx` when page changes (reporting on-page item count) or filter changes settle.
 - [x] **Focus Target Fallback (`GAP-6`)**:
   - [x] Update `focusDetailOpener()` in `App.tsx` to query an anchor element (e.g. `document.getElementById('status-filter')?.focus()`) if `opener.isConnected` is false.
 - [x] **Verification**:

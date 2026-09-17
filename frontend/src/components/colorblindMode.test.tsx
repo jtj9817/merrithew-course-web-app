@@ -170,11 +170,14 @@ describe('Material Design 3 Colorblind Mode', () => {
     expect(modalBadge.querySelector('svg.status-badge-icon')).toBeInTheDocument()
   })
 
-  it('mounts into top appbar when shell mount target is present and keeps toggles synchronized', async () => {
-    // Simulate Razor Pages shell appbar mount target
+  it('mounts into top appbar inside shell-appbar-badge and keeps toggles synchronized', async () => {
+    // Simulate Razor Pages shell appbar badge mount target
+    const badgeContainer = document.createElement('div')
+    badgeContainer.className = 'shell-appbar-badge'
     const appbarMount = document.createElement('div')
     appbarMount.id = 'shell-appbar-colorblind'
-    document.body.appendChild(appbarMount)
+    badgeContainer.appendChild(appbarMount)
+    document.body.appendChild(badgeContainer)
 
     renderIsland((d) =>
       d.queueResponse(jsonResponse(200, envelope([fixInq1()]))),
@@ -188,6 +191,7 @@ describe('Material Design 3 Colorblind Mode', () => {
     const [topSwitch, bottomSwitch] = switches
     expect(topSwitch).toHaveAttribute('aria-checked', 'false')
     expect(bottomSwitch).toHaveAttribute('aria-checked', 'false')
+    expect(badgeContainer.contains(topSwitch)).toBe(true)
 
     // Activating top switch updates bottom switch simultaneously
     await user.click(topSwitch)
@@ -195,6 +199,6 @@ describe('Material Design 3 Colorblind Mode', () => {
     expect(bottomSwitch).toHaveAttribute('aria-checked', 'true')
 
     // Clean up DOM
-    appbarMount.remove()
+    badgeContainer.remove()
   })
 })

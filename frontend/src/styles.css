@@ -349,15 +349,11 @@ button:disabled {
   line-height: 1.2;
 }
 
-.shell-appbar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .shell-appbar-badge {
   display: flex;
   align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
 .appbar-chip {
@@ -1284,6 +1280,37 @@ noscript a {
     padding: var(--space-3) var(--space-4);
   }
 
+  .shell-appbar-inner {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .shell-appbar-badge {
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .shell-appbar-badge .m3-switch-chip {
+    padding: 2px var(--space-2);
+    min-height: 32px;
+    font-size: var(--md-sys-typescale-label-small-size);
+  }
+
+  .shell-appbar-badge .m3-switch-track {
+    width: 32px;
+    min-width: 32px;
+    height: 18px;
+  }
+
+  .shell-appbar-badge .m3-switch-thumb {
+    width: 10px;
+    height: 10px;
+  }
+
+  .shell-appbar-badge .m3-switch-chip--selected .m3-switch-thumb {
+    transform: translateX(14px);
+  }
+
   .toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -1322,6 +1349,19 @@ noscript a {
       opacity: 1;
       transform: translateY(0);
     }
+  }
+}
+
+@media (max-width: 440px) {
+  .shell-appbar-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .shell-appbar-badge {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 

@@ -170,7 +170,8 @@ window.SYSTEM_MODEL = {
     "Avoid visitor data and raw exceptions in logs"
    ],
    "evidence": [
-    "backend/Middleware/"
+    "backend/Program.cs",
+    "backend/Controllers/InquiriesController.cs"
    ]
   },
   {

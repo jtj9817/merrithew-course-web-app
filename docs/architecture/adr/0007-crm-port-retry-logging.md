@@ -50,6 +50,6 @@ the port.
 silently drops the sync (it is only logged). There is no durable outbox or
 dead-letter.
 
-**Watch for:** a production integration needs a durable outbox/queue with retry
-and a dead-letter, plus alerting on repeated failures. Noted under "what I'd
-improve with more time".
+**Watch for:** if CRM delivery becomes business-critical, supersede this
+assessment decision with the [durable outbox design](../future/durable-crm-outbox.md):
+transactional intent, durable retries, dead-letter handling, and alerting.

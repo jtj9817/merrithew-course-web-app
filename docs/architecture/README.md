@@ -1,10 +1,10 @@
 # Architecture
 
-> **Status: target design (greenfield).** No application code exists yet. This
-> folder captures the intended design, refined by the boundary review and TDD
-> extension. Verifications are all `planned`; components describe intended, not
-> existing, code. ADRs 0001–0008 remain historical records; ADR-0009 clarifies
-> ambiguous boundaries without changing the single-process topology.
+> **Status: implemented and verified.** The target design was completed
+> test-first through TODO Phase 9. All 22 model verifications carry passing
+> evidence; the Phase 9 record covers the full suites, SQL Server lane,
+> clean-checkout setup, and built-app walkthrough. ADRs retain the history of
+> the decisions that produced the current single-process topology.
 
 ## Read the design and implementation plan
 
@@ -17,7 +17,7 @@
 - [Implementation checklist](../../TODO.md): phase scope and completion gates.
 
 The model owns topology and REQ/VER allocation; the domain and boundary documents
-own semantics. Planned verification coverage is **not** passing test evidence.
+own semantics. Passing claims resolve to evidence recorded on each verification.
 
 ## Interactive diagrams
 
@@ -91,6 +91,21 @@ The CRM call is awaited and can add latency; “does not prevent storage” is n
 “never blocks the response.” Cancellation and timeouts are cooperative. Stable
 pagination is not snapshot isolation, and UTC timestamps are not concurrency
 tokens. These limits are explicit so tests do not promise stronger guarantees.
+
+## Future production designs
+
+The assessment intentionally keeps production identity, durable delivery, and
+retry deduplication out of the implemented scope. Adopt these designs only when
+their stated operational trigger exists:
+
+- [Authentication, authorization, and audit history](future/authentication-authorization-audit.md)
+  — required before real visitor data or shared-network exposure.
+- [Durable CRM outbox](future/durable-crm-outbox.md) — required if eventual CRM
+  delivery must survive restarts and extended outages.
+- [Idempotency keys](future/idempotency-keys.md) — required when intake clients
+  automatically retry a logical submission.
+
+Each document is explicitly future design, not a claim about current behavior.
 
 ## Decision records
 

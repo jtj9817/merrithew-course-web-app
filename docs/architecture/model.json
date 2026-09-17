@@ -63,7 +63,7 @@
       "tech": ["Exception middleware"],
       "description": "Consistent API ProblemDetails for binding, validation, routing, missing resources and unhandled errors. Controllers map missing service results; status-code and exception handling cover their separate paths.",
       "responsibilities": ["Format 400/404/405/415 responses", "Sanitize 500s in Development and Production", "Avoid visitor data and raw exceptions in logs"],
-      "evidence": ["backend/Middleware/"] },
+      "evidence": ["backend/Program.cs", "backend/Controllers/InquiriesController.cs"] },
     { "id": "comp.openapi", "name": "OpenAPI / Swagger", "level": 2, "kind": "ui", "parent": "sub.api",
       "tech": ["Swashbuckle / OpenAPI"],
       "description": "Generated API docs and an executable UI. Doubles as the create/update interface the spec permits in place of building every form.",

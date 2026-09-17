@@ -1,7 +1,7 @@
 # 9. Make boundary contracts explicit and develop behavior test-first
 
 Date: 2026-09-16
-Status: Accepted (target design; implementation pending)
+Status: Accepted — implemented and verified through Phase 9
 
 ## Context
 
@@ -73,8 +73,11 @@ A repository solely for tests would also reverse ADR-0005 without a domain need.
 ### Production delivery/concurrency infrastructure now (rejected)
 
 An outbox, idempotency keys, auth, and ETags solve real future problems, but they
-change the agreed assessment scope. Document the limitations and test the chosen
-behavior instead of implying those guarantees exist.
+change the agreed assessment scope. The conditional
+[auth/audit](../future/authentication-authorization-audit.md),
+[outbox](../future/durable-crm-outbox.md), and
+[idempotency](../future/idempotency-keys.md) designs preserve those options
+without implying the guarantees exist today.
 
 ## Consequences
 
@@ -86,7 +89,7 @@ add work. SQL Server is required for full script-test evidence, although neither
 application runtime nor the fast SQLite suite depends on it. Last-writer-wins,
 possible duplicate POSTs, and lost CRM delivery remain accepted limitations.
 
-**Watch for:** contracts and case catalogs describe intended behavior only.
-Keep model statuses `planned` until actual tests and required walkthroughs run.
+**Watch for:** contracts and case catalogs remain executable specifications.
+Return affected model statuses to `planned` whenever implementation changes invalidate evidence.
 Use a new ADR if the accepted delivery, deletion, or concurrency policy changes;
 do not rewrite the historical decisions.

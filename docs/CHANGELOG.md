@@ -33,17 +33,23 @@ local SQLite file. What a user of the app or the API can now do:
   [testing evidence](testing/tdd-plan.md#phase-7-implementation-record).
 - **Documentation**: README, written answers, ADRs, boundary contracts, domain
   model, interactive architecture diagrams, and these backend/frontend docs.
+- **Future production designs**: conditional implementation plans for
+  authentication/authorization with audit history, a durable CRM outbox, and
+  client-supplied idempotency keys under `architecture/future/`.
 
 ### Accepted limitations (by design, at assessment scope)
 
 Behavior a downstream reader should know before relying on this build:
 
 - **`DELETE` is a hard delete** — irreversible, no audit trail; use the `Closed`
-  status to retain-but-deactivate ([ADR-0006](architecture/adr/0006-hard-delete.md)).
+  status to retain-but-deactivate ([ADR-0006](architecture/adr/0006-hard-delete.md);
+  [future auth/audit design](architecture/future/authentication-authorization-audit.md)).
 - **No authentication/authorization** — staff endpoints are open; synthetic data and
-  local/demo use only ([C7](architecture/contracts.md#c7-web-ui-and-hosting)).
+  local/demo use only ([C7](architecture/contracts.md#c7-web-ui-and-hosting);
+  [future design](architecture/future/authentication-authorization-audit.md)).
 - **CRM sync is best-effort** — no durable outbox, so a crash or a permanently-down
   CRM can silently drop a sync; the stored inquiry is unaffected
-  ([ADR-0007](architecture/adr/0007-crm-port-retry-logging.md)).
+  ([future outbox design](architecture/future/durable-crm-outbox.md)).
 - **Status writes are last-committed-wins** (no ETag/409) and intake is not
-  idempotent (a repeated `POST` can create a duplicate).
+  idempotent; automated retry clients would need the
+  [idempotency-key design](architecture/future/idempotency-keys.md).

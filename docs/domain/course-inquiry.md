@@ -4,13 +4,13 @@ The bounded context is a single internal tool: staff at Merrithew triage **cours
 registration inquiries** that visitors submit from the public website. Each
 creation attempts a best-effort simulated CRM sync after the inquiry is stored.
 
-> **Target specification — entity, persistence, and DTO validation implemented.**
-> Assessment requirements cite `option-1-course-inquiry-dashboard.md` as
-> `spec:<line>`; decisions filling its gaps are identified separately through
-> ADRs. [ADR-0009](../architecture/adr/0009-testable-boundary-contracts.md) and
+> **Implemented and verified specification.** Assessment requirements cite
+> `option-1-course-inquiry-dashboard.md` as `spec:<line>`; decisions filling its
+> gaps are identified separately through ADRs.
+> [ADR-0009](../architecture/adr/0009-testable-boundary-contracts.md) and the
 > [boundary contracts](../architecture/contracts.md) refine the initial plan with
-> edge-case semantics. The [TDD extension](../testing/tdd-plan.md) defines the
-> implementation flow and unit/integration test cases; it is not passing evidence.
+> edge-case semantics. The [TDD extension](../testing/tdd-plan.md) records the
+> completed implementation flow and passing unit, integration, SQL, and browser evidence.
 
 ## Vocabulary
 
@@ -78,8 +78,8 @@ changing timestamps. See [contract C2](../architecture/contracts.md#c2-status-an
 ## Rules
 
 Assessment-mandated rules cite the spec; refinements cite the boundary contracts.
-> Entity/storage and DTO rules have Phase 0–2 evidence; service/CRM/API behavior
-> remains planned. See the [execution record](../testing/tdd-plan.md#phases-02-implementation-record).
+All rules below are implemented; passing evidence is indexed in the
+[Phase 9 execution record](../testing/tdd-plan.md#phase-9-implementation-record).
 
 - **Default status is `New`.** A newly created inquiry always starts at `New`,
   regardless of client input. (`spec:45`)
@@ -106,6 +106,9 @@ Assessment-mandated rules cite the spec; refinements cite the boundary contracts
   submit the same request again. There is no uniqueness/idempotency guarantee;
   the duplicate-email SQL query is reporting only. (`spec:59`;
   [C8](../architecture/contracts.md#c8-persistence-migration-and-sql-deliverable))
+  If an intake client later retries automatically, use the explicit
+  [idempotency-key design](../architecture/future/idempotency-keys.md); do not
+  infer duplicates from visitor data.
 - **Persistence precedes best-effort CRM sync.** A definite failed write makes
   no CRM attempt. A CRM failure after commit cannot erase the row. Disconnection
   can hide a successful commit from the caller, and a crash can lose the sync;
@@ -130,10 +133,10 @@ precedence over ambiguous earlier prose.
 | Hard vs soft delete | **Hard delete** — `Closed` already covers "keep but deactivate" | [ADR-0006](../architecture/adr/0006-hard-delete.md) |
 | Required-field set | First/Last/Email/CourseName required; Phone/Location/Message optional | [ADR-0005](../architecture/adr/0005-layered-service-dto.md) |
 | Status transitions | **Free-form**; required, defined, name-only input; same-status no-op | [ADR-0008](../architecture/adr/0008-free-form-status-transitions.md), [ADR-0009](../architecture/adr/0009-testable-boundary-contracts.md) |
-| Staff authentication | **Out of scope**; open endpoints are not safe for real data | [C7](../architecture/contracts.md#c7-web-ui-and-hosting) |
+| Staff authentication | **Out of scope**; open endpoints are not safe for real data | [C7](../architecture/contracts.md#c7-web-ui-and-hosting); [future auth/audit design](../architecture/future/authentication-authorization-audit.md) |
 | `Id` strategy | **Int identity / autoincrement** | [ADR-0003](../architecture/adr/0003-efcore-sqlite-and-sql-script.md) |
 | Validation | DataAnnotations plus explicit wire-value checks | [ADR-0005](../architecture/adr/0005-layered-service-dto.md), [C1–C3](../architecture/contracts.md) |
-| CRM delivery | Awaited and bounded after commit; no durable outbox | [C5–C6](../architecture/contracts.md#c5-commit-boundary-cancellation-and-crm-delivery) |
+| CRM delivery | Awaited and bounded after commit; no durable outbox | [C5–C6](../architecture/contracts.md#c5-commit-boundary-cancellation-and-crm-delivery); [future outbox design](../architecture/future/durable-crm-outbox.md) |
 | Test workflow | Red → green → refactor for each behavior, not optional tests at the end | [TDD extension](../testing/tdd-plan.md) |
 
 See the full architecture and traceability in [`../architecture/`](../architecture/)

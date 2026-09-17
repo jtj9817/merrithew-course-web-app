@@ -1,15 +1,15 @@
 # Boundary contracts and edge cases
 
-> **Target design — partially implemented through TODO Phases 0–2.** This document
-> closes unspecified behavior in the [assessment](../../option-1-course-inquiry-dashboard.md) and existing
+> **Implemented and verified through TODO Phase 9.** This document closes
+> unspecified behavior in the [assessment](../../option-1-course-inquiry-dashboard.md) and existing
 > ADRs. Numeric limits, wire shapes, retry timings, and no-op semantics below are
 > **project decisions**, not requirements quoted from the assessment.
 > [ADR-0009](adr/0009-testable-boundary-contracts.md) records this refinement.
 > The [domain specification](../domain/course-inquiry.md) owns business meaning;
 > this file owns externally observable technical contracts. The architecture
 > [model](model.json) owns REQ/VER identifiers and allocation, not duplicate API
-> schemas. [TDD plan](../testing/tdd-plan.md) and its case catalogs verify these
-> contracts; the execution record distinguishes passing cases from planned work.
+> schemas. The [TDD plan](../testing/tdd-plan.md), case catalogs, and Phase 9
+> execution record provide the passing evidence for these contracts.
 
 ## C1. Intake validation and representation
 
@@ -40,6 +40,8 @@ check, not deliverability, DNS, or a stricter hand-written RFC parser.
 A repeated email or identical submission creates another row with a distinct
 ID. There is no uniqueness constraint, deduplication, or idempotency key.
 Duplicate-email reporting in C8 is analytical, not an intake rejection rule.
+If automated intake retries become part of the client contract, use explicit
+[idempotency keys](future/idempotency-keys.md), never email/body heuristics.
 
 `InquiryResponse` contains the entity's eleven documented fields, with a
 positive integer `id`, canonical status name, and UTC ISO-8601 timestamps ending
@@ -137,6 +139,8 @@ Status writes are **last committed write wins**, with no ETag, rowversion, or
 map the zero-row concurrency failure to `404`; never recreate it or report a
 successful write. A no-op reports the row observed at lookup; it is not a lock
 against a later concurrent change. No audit history is promised.
+Production identity and atomic mutation history are specified separately as a
+[future authentication, authorization, and audit design](future/authentication-authorization-audit.md).
 
 ## C5. Commit boundary, cancellation, and CRM delivery
 
@@ -166,6 +170,9 @@ latency. The awaited simulation has a bounded cooperative budget (C6). Neither
 successful delivery of a response nor delivery to the CRM can be guaranteed by
 a database commit alone. No background queue, automatic intake retry, or durable
 CRM retry is added by this plan.
+If those guarantees become business requirements, supersede this contract with
+the [durable outbox](future/durable-crm-outbox.md) and
+[idempotency-key](future/idempotency-keys.md) designs.
 
 ## C6. CRM retry, timeout, and privacy
 
@@ -241,6 +248,8 @@ data and a local demo environment; exposing the open API leaks personal data
 and permits destructive operations. Production auth, CSRF strategy for any
 future cookie-authenticated API, retention, and audit are future design work,
 not implemented guarantees or invented 401/403 acceptance tests.
+The conditional production design is documented in
+[authentication, authorization, and audit history](future/authentication-authorization-audit.md).
 
 ## C8. Persistence, migration, and SQL deliverable
 

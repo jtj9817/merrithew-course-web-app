@@ -1,14 +1,13 @@
 # Frontend and SQL test cases — Course Inquiry Dashboard
 
-> **Status: partially implemented specifications.** SQL Server cases IT-SQL-001
-> through IT-SQL-008 have passed on a disposable SQL Server; see the
-> [implementation record](tdd-plan.md#phases-02-implementation-record). Frontend
-> and hosting cases below remain **planned**, not passing. This catalog refines the target boundary contracts
-> ([contracts.md](../architecture/contracts.md), C1–C8) and
+> **Status: implemented and verified.** The frontend, host, browser, and SQL
+> Server cases in this catalog have passing evidence in the
+> [Phase 9 implementation record](tdd-plan.md#phase-9-implementation-record) and
+> [manual evidence](manual-evidence.md). This catalog refines the target boundary
+> contracts ([contracts.md](../architecture/contracts.md), C1–C8) and
 > [ADR-0009](../architecture/adr/0009-testable-boundary-contracts.md) into
-> executable case tables, and integrates with the parent plan
-> [tdd-plan.md](tdd-plan.md). Requirement/verification identifiers live in
-> [model.json](../architecture/model.json).
+> executable case tables. Requirement/verification identifiers and evidence live
+> in [model.json](../architecture/model.json).
 
 ## 1. Scope
 
@@ -394,5 +393,5 @@ E2E suite).
   path) and the script query markers `-- query: …` plus harness-suppliable
   `@AsOf` in §8. If either lands differently, update this catalog in the same
   change — do not weaken the cases.
-- **Verification status:** no case in this file has been executed; nothing here
-  is claimed as passing. All model verifications remain `planned`.
+- **Verification status:** every case in this file has executable passing
+  evidence; all mapped model verifications are `passing`.

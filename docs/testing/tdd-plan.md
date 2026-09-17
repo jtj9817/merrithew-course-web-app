@@ -1,9 +1,9 @@
 # TDD extension — Course Inquiry Dashboard
 
-> **Status: partially implemented.** Phases 0–2 now have application and test
-> code; the [implementation record](#phases-02-implementation-record) below
-> distinguishes executed evidence from later-phase planned cases. This document
-> extends [TODO.md](../../TODO.md); tests are not deferred to the end.
+> **Status: implemented and verified through Phase 9.** All committed backend,
+> frontend, hosting, SQL Server, and supplemental browser evidence is complete.
+> The implementation records below preserve the red → green → refactor history;
+> [TODO.md](../../TODO.md) contains the completed phase checklist.
 
 ## Scope and source of truth
 
@@ -156,12 +156,12 @@ assertion can go red before the endpoint/service behavior is implemented.
 | Regression gate / 7 | All selected catalog tests already exist from their slices | Run the whole applicable suite, including SQL Server for release; Phase 7 is not where testing begins |
 | Documentation and closeout / 8, 9 | Review actual commands and contracts against implementation and test evidence | Setup verified from a clean checkout; written answers complete; model updated only for genuinely passing evidence |
 
-## Execution commands after scaffolding
+## Execution commands
 
-These are the **target commands to implement**, not commands that work in this
-planning-only checkout. Run from the repository root unless noted. Add the
-packages/scripts/traits above before using them; a filtered run discovering zero
-tests must fail the verification gate rather than count as success.
+These commands are implemented and run from the repository root unless noted.
+Frontend dependencies must be installed before frontend or host-integration
+commands. A filtered run discovering zero tests is not a successful verification
+gate.
 
 ```bash
 # Focused .NET red/green cycle (use the selected catalog CaseId).
@@ -319,8 +319,8 @@ Real bugs caught and resolved during the TDD loop:
 4. **LoggerMessage state key casing:** LoggerMessage source-gen retains template placeholder casing (`{Outcome}` -> key `Outcome`). Updated test inspection helpers to use case-insensitive key lookup.
 5. **Polly delay timer resolution:** `Task.Delay(400)` under Polly v8 completed 0.16 ms under 400 ms on Linux; widened test lower bounds slightly (385 ms) while strictly enforcing monotone exponential ordering.
 
-Phase 6 (React island frontend & Razor shell hosting) is implemented and recorded
-below; Phase 9 (model.json verification updates) remains planned.
+Phase 6 (React island frontend and Razor shell hosting) is recorded below.
+Phase 9 later completed the model verification updates and final closeout.
 
 ## Phase 6 implementation record
 

@@ -166,25 +166,29 @@ is irreversible and leaves no audit trail (see below).
 
 ## What I'd improve with more time
 
-Deliberate scope trade-offs, each recorded against the ADR that accepted it:
+The implemented assessment deliberately accepts the limitations below. Detailed
+future designs are conditional and are **not** current behavior:
 
-- **Soft delete + retention/audit.** Real lead data usually warrants a reversible
-  delete with an audit trail rather than a permanent removal
-  ([ADR-0006](docs/architecture/adr/0006-hard-delete.md)).
-- **A durable CRM outbox.** Post-commit sync is best-effort: a permanently-down CRM
-  or a crash silently drops the sync. Production needs an outbox/queue with retry, a
-  dead-letter, and alerting on repeated failures
-  ([ADR-0007](docs/architecture/adr/0007-crm-port-retry-logging.md),
-  [C5](docs/architecture/contracts.md#c5-commit-boundary-cancellation-and-crm-delivery)).
-- **Authentication and authorization.** Staff endpoints are open; a real deployment
-  needs auth (and a CSRF strategy for any cookie-authenticated API), plus data
-  retention and audit policy
-  ([C7](docs/architecture/contracts.md#c7-web-ui-and-hosting)).
-- **Concurrency and idempotency.** Status writes are last-committed-wins with no
-  ETag/409; a repeated `POST` can duplicate intake. Optimistic concurrency and an
-  idempotency key would harden both
-  ([C4](docs/architecture/contracts.md#c4-listing-pagination-and-concurrent-triage),
-  [C5](docs/architecture/contracts.md#c5-commit-boundary-cancellation-and-crm-delivery)).
+- **Authentication, authorization, and audit history.** Staff endpoints are open
+  and hard delete leaves no history. Before using real visitor data, add managed
+  staff identity, least-privilege policies, CSRF protection for cookie-authenticated
+  mutations, and atomic minimal audit events. Reassess soft delete and retention at
+  the same boundary
+  ([future design](docs/architecture/future/authentication-authorization-audit.md),
+  [ADR-0006](docs/architecture/adr/0006-hard-delete.md)).
+- **A durable CRM outbox, if delivery becomes business-critical.** The current
+  post-commit call is best-effort, so a crash or prolonged outage can lose a sync.
+  A transactional outbox, durable worker retries, dead-letter handling, and
+  downstream idempotency would provide observable at-least-once delivery
+  ([future design](docs/architecture/future/durable-crm-outbox.md)).
+- **Idempotency keys, if intake clients retry automatically.** The current API
+  correctly allows intentional repeat inquiries, but it cannot distinguish those
+  from a retry after a lost response. Client-generated keys must scope one logical
+  submission; email/body heuristics must not deduplicate legitimate inquiries
+  ([future design](docs/architecture/future/idempotency-keys.md)).
+- **Optimistic concurrency only if overlapping staff edits become a demonstrated
+  problem.** Status writes currently remain last-committed-wins with no ETag/409
+  ([C4](docs/architecture/contracts.md#c4-listing-pagination-and-concurrent-triage)).
 
 ## AI tools used
 
@@ -208,4 +212,7 @@ assistant's output was checked against the running tests and the assessment brie
 - [Written answers](written-answers.md) — troubleshooting, security, accessibility,
   code quality.
 - [Testing](docs/testing/tdd-plan.md) — the TDD plan, case catalogs, and evidence.
+- [Future production designs](docs/architecture/README.md#future-production-designs)
+  — conditional plans for access control/audit, durable CRM delivery, and
+  retry-safe intake.
 - [Changelog](docs/CHANGELOG.md).

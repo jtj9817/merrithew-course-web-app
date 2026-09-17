@@ -88,9 +88,10 @@ reconciliation using the count-by-status / last-7-days reports.
 - **Authentication / authorization — the biggest gap, and out of assessment scope.**
   Staff endpoints are currently **open**; same-origin fetch and "staff" labels are
   not access control. The API must not be exposed publicly as-is — run only with
-  synthetic data locally. Production needs authenticated staff, role-based
-  authorization on the endpoints, and a CSRF strategy for any cookie-authenticated
-  API ([C7](docs/architecture/contracts.md#c7-web-ui-and-hosting)).
+  synthetic data locally. Production needs authenticated staff, least-privilege
+  policies, CSRF protection for cookie-authenticated mutations, and atomic audit
+  history ([C7](docs/architecture/contracts.md#c7-web-ui-and-hosting);
+  [future design](docs/architecture/future/authentication-authorization-audit.md)).
 - **Error handling.** `500`s are sanitized in **both Development and Production**
   ([Program.cs](backend/Program.cs)): no stack traces, SQL, connection strings, or
   visitor values reach the client, and validation errors don't echo attempted values

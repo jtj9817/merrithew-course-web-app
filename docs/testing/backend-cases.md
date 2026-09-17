@@ -1,17 +1,15 @@
 # Backend test-case catalog — DTO, service, HTTP, SQLite, CRM, logging
 
-> **Partially implemented specification.** Phase 0–2 DTO and persistence cases
-> now have executable evidence in the [TDD implementation record](tdd-plan.md#phases-02-implementation-record).
-> This backend catalog verifies boundary contracts
+> **Implemented and verified specification.** Every backend case in this catalog
+> has executable evidence; the aggregate Phase 9 run is recorded in the
+> [TDD implementation record](tdd-plan.md#phase-9-implementation-record).
+> This catalog verifies boundary contracts
 > [C1–C8](../architecture/contracts.md) recorded in
 > [ADR-0009](../architecture/adr/0009-testable-boundary-contracts.md).
-> REQ/VER identifiers come from the architecture
-> [model](../architecture/model.json); `REQ/VER-DATA-003`, `REQ/VER-APP-003` and
-> `REQ/VER-CRM-004` are the new identifiers being added there. Existing model IDs
-> are unchanged. Frontend cases (`VER-UI-001/002`), SQL Server script cases
-> (`VER-DATA-002`), and the end-to-end walkthroughs (`VER-SYS-001`,
-> `VER-UI-001`, `VER-SYS-003` review) are **out of scope here** and owned by the
-> sibling catalogs.
+> REQ/VER identifiers and passing evidence live in the architecture
+> [model](../architecture/model.json). Frontend cases (`VER-UI-001/002`), SQL
+> Server script cases (`VER-DATA-002`), and supplemental browser walkthroughs
+> remain owned by the sibling catalog and manual evidence record.
 
 ## 1. Levels and conventions
 

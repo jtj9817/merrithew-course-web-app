@@ -85,12 +85,22 @@ Aggregate model verifications with frontend or browser components remain planned
 pending Phases 6 and 9.
 ## Phase 6 — Frontend — ADR-0004
 
-- [ ] Vite + React + TypeScript in `frontend/`; Vitest/jsdom/Testing Library + user-event test harness with non-watch `test` script — ADR-0004, 0009
-- [ ] Production assets in a dedicated `backend/wwwroot` subfolder; Razor `/dashboard` resolves the manifest entry/CSS/imports, renders one mount point and loading/no-JavaScript guidance
-- [ ] Write then pass component integration for list/filter/paging/detail/status and clear success/error feedback — REQ-UI-001
-- [ ] Write then pass stale-response/unmount handling, pending mutations, filter/page reconciliation, missing records, safe text/errors, keyboard/focus/live regions — REQ-UI-002, C7
-- [ ] Keep create/delete in API/Swagger; the visitor form and island create/delete controls are out of scope (resolves `ann.create-ui`)
-- [ ] Verify Razor and real compiled assets through host integration, then run browser triage/accessibility checks — VER-UI-001, VER-UI-002, VER-SYS-001
+- [x] Vite + React + TypeScript in `frontend/`; Vitest/jsdom/Testing Library + user-event test harness with non-watch `test` script — ADR-0004, 0009
+- [x] Production assets in a dedicated `backend/wwwroot` subfolder; Razor `/dashboard` resolves the manifest entry/CSS/imports, renders one mount point and loading/no-JavaScript guidance
+- [x] Write then pass component integration for list/filter/paging/detail/status and clear success/error feedback — REQ-UI-001
+- [x] Write then pass stale-response/unmount handling, pending mutations, filter/page reconciliation, missing records, safe text/errors, keyboard/focus/live regions — REQ-UI-002, C7
+- [x] Keep create/delete in API/Swagger; the visitor form and island create/delete controls are out of scope (resolves `ann.create-ui`)
+- [x] Verify Razor and real compiled assets through host integration, then run browser triage/accessibility checks — VER-UI-001, VER-UI-002, VER-SYS-001
+
+Evidence and scope: [Phase 6 implementation record](docs/testing/tdd-plan.md#phase-6-implementation-record).
+UT-UI-001..005, IT-UI-001..030 (52 Vitest tests) and IT-HOST-001..004 (146
+non-SQLServer .NET tests total) pass; MAN-UI-001/002/004 browser walkthroughs
+ran against the live app (screenshots at 1280/375/640px, keyboard pass, clean
+console). MAN-UI-003's browser-level JavaScript disable was not exposed by the
+automation surfaces — evidenced instead by a JS-less client fetch plus
+IT-HOST-003's automated shell assertions. One catalog example corrected in
+sync (UT-UI-004 tuple, see the record). Aggregate VER-* statuses in model.json
+remain planned until Phase 9.
 
 ## Phase 7 — Regression gate (tests were written in each slice)
 

@@ -319,7 +319,139 @@ Real bugs caught and resolved during the TDD loop:
 4. **LoggerMessage state key casing:** LoggerMessage source-gen retains template placeholder casing (`{Outcome}` -> key `Outcome`). Updated test inspection helpers to use case-insensitive key lookup.
 5. **Polly delay timer resolution:** `Task.Delay(400)` under Polly v8 completed 0.16 ms under 400 ms on Linux; widened test lower bounds slightly (385 ms) while strictly enforcing monotone exponential ordering.
 
-Phase 6 (React island frontend & Razor shell hosting) and Phase 9 (model.json verification updates) remain planned.
+Phase 6 (React island frontend & Razor shell hosting) is implemented and recorded
+below; Phase 9 (model.json verification updates) remains planned.
+
+## Phase 6 implementation record
+
+Executed 2026-09-17. All mapped frontend/hosting cases
+(UT-UI-001..005, IT-UI-001..030, IT-HOST-001..004) pass, plus supplemental
+MAN-UI browser walkthroughs against the real running app.
+
+### Delivered
+
+- **Frontend project (`frontend/`)**: Vite 8 + React 19 + TypeScript 7 (strict),
+  Vitest 5 + jsdom + Testing Library (`react`, `user-event`, `jest-dom`).
+  `test` script is non-watch `vitest run`; test files live at
+  `frontend/src/**/*.test.ts(x)` with case IDs in describe/test names.
+  Pinned build contract honored: `base: '/app/'`,
+  `build.outDir: '../backend/wwwroot/app'` (`emptyOutDir` confined to `app/`),
+  manifest at `backend/wwwroot/app/.vite/manifest.json`.
+- **Test harness (`frontend/src/test/`)**: canonical §4 fixtures transcribed
+  verbatim (`fixtures.ts`), a FIFO fetch double with deferred handles and
+  request recording (`fetchDouble.ts`, installs on both `window.fetch` and
+  `globalThis.fetch` because bare `fetch` resolves through the Node global in
+  jsdom), and `renderIsland(prepare)` which programs the double *before* mount
+  (the initial list request fires during render).
+- **Island (`frontend/src/`)**: `App` owns list/filter/sort/page state with a
+  sequence guard plus `AbortController` for list and detail requests (older
+  responses never overwrite newer state, resolutions after unmount are silent);
+  empty-page reconciliation to `max(1, ceil(totalCount/pageSize))`; detail
+  drawer with focus-in/Escape/Close focus return; per-row status select + Apply
+  with duplicate-submission guard; PUT-then-refresh with "saved, refresh
+  failed" combined wording; safe ProblemDetails/network degradation via the
+  outcome classifier; one polite (`role="status"`) and one assertive
+  (`role="alert"`) region; no create/delete affordances anywhere.
+- **Razor shell (`backend/Pages/`)**: `/dashboard` with exactly one
+  `#dashboard-root` mount, loading placeholder, `<noscript>` guidance, and
+  manifest-resolved entry script + stylesheets (`backend/Hosting/ViteManifest.cs`
+  reads the manifest per request; a missing manifest degrades to guidance
+  without crashing). `Program.cs` adds `AddRazorPages`, `UseStaticFiles`,
+  `UseRouting`, `MapRazorPages`, and `/` → `/dashboard`. A real `favicon.ico`
+  ships in `backend/wwwroot` (`.gitignore` ignores only the generated
+  `backend/wwwroot/app/`).
+- **Host lane**: `FrontendBuild` fixture (build-once via
+  `pnpm --dir frontend build` when the manifest is missing, Blocked-style
+  failure mirroring the SQL lane, TCP probe proving no Vite dev server on
+  5173) + IT-HOST-001..004 in `tests/.../Integration/FrontendHostTests.cs`.
+
+### Red-first evidence
+
+- UT-UI-001..005: written before the lib modules existed — all four test
+  files failed with `Failed to resolve import` before implementation.
+- IT-UI-001..011 (listFlow): all 11 failed against the placeholder `App`
+  (loading indicator/table/controls absent).
+- IT-HOST-001..004: written before the Razor page/routing existed — all four
+  failed with 404s; green only after the shell plus a production build.
+- Honest scope note: IT-UI-012..030 (detail/status/safety/a11y batches) were
+  written and run after the core island landed in the listFlow cycle, so their
+  first observed red is weaker (the meaningful pre-implementation red for the
+  detail path is IT-UI-011's failing opener click in the listFlow red run).
+  Each later batch still caught real defects on first execution (below), so
+  the assertions ran against imperfect implementations rather than
+  rubber-stamping green.
+
+### Catalog correction (kept in sync per §11)
+
+- **UT-UI-004 first tuple**: the catalog's example value `2` for
+  `(3, 41, 20)` contradicted its own normative formula
+  `max(1, ceil(totalCount/pageSize))` (41 items at 20/page span three pages;
+  IT-UI-007's "45 items → page 3 of 3" confirms ceil semantics). Corrected to
+  `3` in `frontend-and-sql-cases.md` with a dated note; the test file carries
+  the same comment.
+
+### Green commands and evidence
+
+| Command / surface | Observed result |
+| --- | --- |
+| `pnpm --dir frontend test` | 52 passed, 0 failed (20 UT-UI tests incl. an extra All-filter case + 31 IT-UI test blocks covering IT-UI-001..030) |
+| `pnpm --dir frontend run build` | `tsc -b && vite build` clean; manifest entry + css emitted under `backend/wwwroot/app/assets/` |
+| `dotnet test --filter 'Category!=SqlServer'` | 146 passed, 0 failed (142 prior + IT-HOST-001..004) |
+| `dotnet format --verify-no-changes` / `dotnet build --warnaserror` | Clean / 0 warnings, 0 errors |
+| Live app (`dotnet run --project backend`, port 5083) | Island mounts from compiled assets; filter/detail/status flows work end-to-end; hard-reload persists status changes; XSS row inert (`window.__xss` undefined, no `img`/`script` elements, markup rendered as text); console clean in a second real Chrome after fixes |
+| Browser walkthroughs (MAN-UI-001/002/004) | Mount + filter + detail + status + reload persistence verified; keyboard-only pass: Tab order filter → sort → row opener → row select → Apply, Space activation opens the drawer, Escape returns focus to the opener, arrow-key + Space status update saved; screenshots at 1280px, 375px, and 640px (200% equivalent) reviewed and defects fixed |
+| No-JS shell (MAN-UI-003) | Verified from a JS-less client (curl) plus IT-HOST-003: one mount point, noscript JavaScript guidance, loading placeholder, no visitor data, no dev-server strings. Browser-level JavaScript disable was not exposed by the available automation surfaces; recorded as a tooling limitation |
+
+### Real bugs caught and resolved during the TDD loop
+
+1. **Fetch double bypassed by bare `fetch`**: jsdom provides no fetch, so
+   component code calling bare `fetch(...)` resolved through Node's global and
+   bypassed the `window.fetch` double (every list test failed with the error
+   phase shown). Fixed by installing the double on both `window.fetch` and
+   `globalThis.fetch`.
+2. **Deferred reactions queued after mount were never consumed**: the initial
+   list request fires during `render()`, so reactions must be programmed
+   before mounting; `renderIsland(prepare)` now does install → prepare →
+   render, and the double rejects unexpected requests loudly.
+3. **Refresh success wiped the record-gone announcement**: the list success
+   path cleared `role="alert"` unconditionally, erasing IT-UI-014's gone
+   message in the same tick chain as the reconciliation refresh. Fixed by
+   clearing the assertive region only when recovering from the list-error
+   phase (tracked via a phase ref).
+4. **Mutation failures used list wording**: a generic/network PUT failure
+   rendered "Inquiries could not be loaded…" instead of the mutation message;
+   the update path now maps generic outcomes to the "could not be saved — try
+   again" variant.
+5. **Displayed page followed client page state**: the indicator read the
+   request's page before the envelope arrived, breaking "page 3 of 3" after
+   envelope-driven navigation; the served envelope is now authoritative.
+6. **Missing favicon 404 + unnamed row selects**: a real-browser console check
+   surfaced `GET /favicon.ico → 404` and an autofill issue for unnamed row
+   selects. Fixed by shipping `backend/wwwroot/favicon.ico` (+ layout link,
+   with IT-HOST-004 updated to preserve/restore a pre-existing favicon) and
+   adding `name` attributes to row status selects. Console is now clean.
+7. **Mobile table compression**: at 375px the table squeezed its columns
+   before scrolling; `.inquiry-table` now keeps `min-width: 720px` inside the
+   scrollable wrapper (the page itself does not scroll horizontally), and
+   badge contrast was deepened per screenshot review.
+
+### Post-implementation review
+
+A reviewer pass over the merged Phase 6 tree found no P0/P1 defects and
+confirmed the stale-response guards, reconciliation termination, and IT-HOST
+parallel-safety. Three accepted findings, all fixed and re-verified (52
+Vitest + 146 xUnit green, format/warnaserror clean):
+
+1. Programmatic detail closes (detail fetch failure, PUT 404 with the panel
+   open) dropped focus to `<body>` instead of returning it to the opener —
+   all close paths now share `focusDetailOpener` (C7).
+2. `ViteManifest.Resolve` could throw (wrong-shape JSON via
+   `InvalidOperationException`; delete-between-check-and-read during a
+   rebuild) and 500 the dashboard — the catch now covers those and degrades
+   to the guidance shell as documented.
+3. IT-HOST-004 deleted `wwwroot/app` unguarded and would fail outright on a
+   fresh clone where the generated folder does not exist — guarded with an
+   existence check.
 
 ## Primary guidance used
 

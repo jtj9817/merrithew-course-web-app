@@ -487,3 +487,9 @@ $RECYCLE.BIN/
 backend/*.db
 backend/*.db-shm
 backend/*.db-wal
+
+# Generated frontend build output (pnpm --dir frontend build)
+backend/wwwroot/app/
+
+# ZCode session tooling state
+.zcode/

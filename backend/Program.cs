@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new StatusJsonConverter()));
+builder.Services.AddRazorPages();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -61,6 +62,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// C7: compiled island assets live under the dedicated wwwroot/app subfolder;
+// the shell and API stay reachable without the Vite dev server.
+app.UseStaticFiles();
+app.UseRouting();
+
+app.MapRazorPages();
+app.MapGet("/", () => Results.Redirect("/dashboard"));
 app.MapControllers();
 await app.RunAsync();
 

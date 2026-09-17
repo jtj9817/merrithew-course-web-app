@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using CourseInquiryDashboard.Services;
 
 namespace CourseInquiryDashboard.DevTools;
@@ -6,7 +5,9 @@ namespace CourseInquiryDashboard.DevTools;
 /// <summary>
 /// Dev-only control surface for selecting a deterministic CRM outcome and reading
 /// the safe result of a completed inquiry sync. Program.cs maps this group only
-/// when the CRM simulation tools are explicitly enabled.
+/// when the CRM simulation tools are explicitly enabled. The update body binds as
+/// loose strings/ints so any invalid payload is a 400 validation problem — never a
+/// JSON-binding 500 — mirroring C3 error semantics for this opt-in surface.
 /// </summary>
 public static class CrmSimulationEndpoints
 {
@@ -30,34 +31,33 @@ public static class CrmSimulationEndpoints
             modes = Modes,
         }));
 
-        group.MapPut("/", (CrmSimulationSettings settings, CrmSimulationRuntime runtime) =>
+        group.MapPut("/", (CrmSimulationUpdateRequest? request, CrmSimulationRuntime runtime) =>
         {
-            var validationResults = new List<ValidationResult>();
-            var valid = Validator.TryValidateObject(
-                settings,
-                new ValidationContext(settings),
-                validationResults,
-                validateAllProperties: true)
-                && Enum.IsDefined(settings.Mode);
+            var errors = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
 
-            if (!valid)
+            var mode = CrmSimulationMode.Success;
+            if (string.IsNullOrEmpty(request?.Mode)
+                || !Enum.TryParse<CrmSimulationMode>(request.Mode, out mode)
+                || !Enum.IsDefined(mode))
             {
-                var errors = validationResults
-                    .SelectMany(result => result.MemberNames.DefaultIfEmpty("settings")
-                        .Select(member => new { member, result.ErrorMessage }))
-                    .GroupBy(item => item.member, StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => group.Select(item => item.ErrorMessage ?? "The value is invalid.").ToArray(),
-                        StringComparer.OrdinalIgnoreCase);
-
-                if (!Enum.IsDefined(settings.Mode))
-                    errors[nameof(settings.Mode)] = ["The CRM simulation mode is not supported."];
-
-                return Results.ValidationProblem(errors);
+                errors["mode"] = [$"The mode must be one of: {string.Join(", ", Enum.GetNames<CrmSimulationMode>())}."];
+                mode = default;
             }
 
-            runtime.Update(settings);
+            var failures = ValidateRange(
+                request?.TransientFailuresBeforeSuccess, min: 0, max: 3, "transientFailuresBeforeSuccess", errors);
+            var latency = ValidateRange(
+                request?.LatencyMilliseconds, min: 0, max: 400, "latencyMilliseconds", errors);
+
+            if (errors.Count > 0)
+                return Results.ValidationProblem(errors);
+
+            runtime.Update(new CrmSimulationSettings
+            {
+                Mode = mode,
+                TransientFailuresBeforeSuccess = failures,
+                LatencyMilliseconds = latency,
+            });
             return Results.Ok(runtime.Current);
         });
 
@@ -67,6 +67,23 @@ public static class CrmSimulationEndpoints
                 : Results.NotFound());
 
         return endpoints;
+    }
+
+    /// <summary>Loose update shape: every field is validated below, not by the binder.</summary>
+    public sealed record CrmSimulationUpdateRequest(
+        string? Mode,
+        int? TransientFailuresBeforeSuccess,
+        int? LatencyMilliseconds);
+
+    private static int ValidateRange(int? value, int min, int max, string field,
+        Dictionary<string, string[]> errors)
+    {
+        if (value is null || value < min || value > max)
+        {
+            errors[field] = [$"The value must be an integer between {min} and {max}."];
+            return min;
+        }
+        return value.Value;
     }
 
     private sealed record CrmSimulationModeInfo(CrmSimulationMode Name, string Description);

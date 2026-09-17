@@ -97,7 +97,7 @@ public sealed record CrmSyncResult(
 /// sync, so changing the dev control cannot alter an in-flight retry sequence.
 /// Results retain only bounded, non-PII metadata for the front-end demonstration.
 /// </summary>
-public sealed class CrmSimulationRuntime
+public class CrmSimulationRuntime
 {
     private const int MaxRetainedResults = 100;
     private readonly ConcurrentDictionary<int, CrmSyncResult> results = new();
@@ -124,7 +124,7 @@ public sealed class CrmSimulationRuntime
         Volatile.Write(ref settings, next);
     }
 
-    public async Task ExecuteAttemptAsync(
+    public virtual async Task ExecuteAttemptAsync(
         CrmInquiryPayload payload,
         int attempt,
         CrmSimulationSettings snapshot,

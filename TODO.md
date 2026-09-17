@@ -123,9 +123,19 @@ agents despite the Agent tool rejecting `task`/`vision-agent` dispatches
 
 ## Phase 8 — Deliverable docs
 
-- [ ] `README.md`: setup + run instructions (incl. .NET 10 SDK requirement, frontend build step), assumptions, **hard-delete rationale** (ADR-0006), what I'd improve with more time (soft-delete/audit, durable CRM outbox, auth), AI-tools disclosure
-- [ ] `written-answers.md`: Troubleshooting, Security, Accessibility, Code quality — draw Security/Code-quality from the ADRs, Troubleshooting from `flow--flow-submit.html` + the SQL queries
-- [ ] Fill `docs/backend/` and `docs/frontend/` alongside the code (deferred in planning); seed `docs/CHANGELOG.md`
+- [x] `README.md`: setup + run instructions (incl. .NET 10 SDK requirement, frontend build step), assumptions, **hard-delete rationale** (ADR-0006), what I'd improve with more time (soft-delete/audit, durable CRM outbox, auth), AI-tools disclosure
+- [x] `written-answers.md`: Troubleshooting, Security, Accessibility, Code quality — draw Security/Code-quality from the ADRs, Troubleshooting from `flow--flow-submit.html` + the SQL queries
+- [x] Fill `docs/backend/` and `docs/frontend/` alongside the code (deferred in planning); seed `docs/CHANGELOG.md`
+
+Evidence and scope: `README.md` and `written-answers.md` were rewritten from the
+Phase 0–7 code (both previously described only the Phase 0–2 state); every claim
+traces to a source file, ADR, or contract. New docs: `docs/backend/README.md`,
+`docs/frontend/README.md`, and a seeded `docs/CHANGELOG.md` — they cross-reference
+the ADRs/contracts rather than duplicating them. `docs/issues/` was intentionally
+skipped (troubleshooting lives in `written-answers.md` per the brief; no runbook
+warranted at this scope). Test counts cited in the docs (146 non-SqlServer + 52
+Vitest + 8 SqlServer) are the recorded Phase 7 results, not re-run here — a fresh
+full-suite pass and the model `planned → passing` update remain Phase 9 work.
 
 ## Phase 9 — Verify & close the loop
 

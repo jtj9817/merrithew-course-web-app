@@ -286,6 +286,41 @@ CRUD, list paging behavior, and all dashboard behavior remain later-phase work.
 `UT-VAL-012` currently proves only direct DTO membership rejection. Broad
 REQ/VER model entries remain `planned` until every mapped case has evidence.
 
+## Phases 3–5 implementation record
+
+Implemented in the current working tree. All 51 backend catalog cases in Phases 3–5
+have executable evidence:
+- `IT-APP-001..019`: 19 service integration tests over real SQLite (`InquiryServiceTests.cs`).
+- `IT-APP-020`: 1 cross-process OS-kill durability and no-replay test (`ProcessRestartTests.cs`).
+- `UT-CRM-001..010`: 10 real Polly v8.8.0 pipeline unit tests with captured sink privacy (`CrmPipelineTests.cs`).
+- `IT-API-001..021`: 21 full HTTP host integration tests over real SQLite (`InquiriesApiTests.cs`).
+
+Observed red assertions before corresponding implementations:
+
+- `IT-APP-001..019`: all 19 tests failed with `NotImplementedException` against the stub `InquiryService`.
+- `UT-CRM-001..010`: all 10 tests failed against the stub `SimulatedCrmClient`.
+- `IT-API-001..021`: 20 of 21 tests failed with `404 Not Found` before `InquiriesController`, `ListInquiriesQueryDto`, and `Program.cs` wiring landed (`IT-API-005` passed vacuously before routing existed).
+
+Green commands and evidence:
+
+| Command / surface | Observed result |
+| --- | --- |
+| `dotnet test --no-build --filter 'Category!=SqlServer'` | 142 passed, 0 failed, 0 skipped (51 new cases + 91 from Phases 0–2) |
+| `dotnet test --filter 'CaseId=IT-APP-020'` | 1 passed (OS SIGKILL, independent SQLite verification, real backend restart, listable row, zero CRM replay for old row, future create CRM sync confirmed) |
+| `dotnet format --verify-no-changes` | Clean, 0 whitespace or formatting issues |
+| `dotnet build --warnaserror` | Succeeded with 0 Warnings and 0 Errors |
+| Live smoke: `dotnet run --project backend` | `GET /swagger/v1/swagger.json` and `/swagger/index.html` HTTP 200 in Development; `POST /api/inquiries` 201; `GET /api/inquiries` 200; `PUT .../status` 200; `DELETE ...` 204; `GET ...` 404 |
+
+Real bugs caught and resolved during the TDD loop:
+
+1. **`ConvertEmptyStringToNull` on query strings:** ASP.NET Core MVC default `DisplayMetadata.ConvertEmptyStringToNull` silently converted `?page=` and `?status=` to `null`, treating supplied-empty values as omitted defaults. Resolved by applying `[DisplayFormat(ConvertEmptyStringToNull = false)]` to `ListInquiriesQueryDto` properties per C4.
+2. **Controller `[Produces]` overriding `ProblemDetails` media type:** `[Produces("application/json")]` forced validation and resource errors to `application/json` instead of `application/problem+json`. Removed to allow natural ProblemDetails content negotiation.
+3. **`ExceptionHandlerMiddlewareImpl` leaking raw exceptions to sinks:** The built-in middleware attaches unhandled exception objects to error log entries, violating C6. Replaced with direct try/catch middleware that logs only `{ErrorType}` and emits sanitized `Results.Problem(statusCode: 500)` in all environments.
+4. **LoggerMessage state key casing:** LoggerMessage source-gen retains template placeholder casing (`{Outcome}` -> key `Outcome`). Updated test inspection helpers to use case-insensitive key lookup.
+5. **Polly delay timer resolution:** `Task.Delay(400)` under Polly v8 completed 0.16 ms under 400 ms on Linux; widened test lower bounds slightly (385 ms) while strictly enforcing monotone exponential ordering.
+
+Phase 6 (React island frontend & Razor shell hosting) and Phase 9 (model.json verification updates) remain planned.
+
 ## Primary guidance used
 
 - Microsoft Learn: [ASP.NET Core integration tests](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-10.0) for WebApplicationFactory, actual HTTP-pipeline testing, and explicit test-host environments. Its project-separation recommendation is implemented here as category/directory separation in the small, already planned test project.

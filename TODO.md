@@ -55,30 +55,34 @@ Aggregate model verifications remain planned pending all mapped later-phase case
 
 ## Phase 3 — Application/service layer — ADR-0005
 
-- [ ] `IInquiryService` + `InquiryService`
-- [ ] Create: force New, sample injected UTC once for both timestamps, await one committed insert, then await best-effort CRM — REQ-APP-001, REQ-CRM-001, C5
-- [ ] List: filter before count/page, deterministic CreatedDate+Id sorting, C4 bounds and page envelope; count/page are separate queries — REQ-API-004
-- [ ] GetById; UpdateStatus (same-status no-op, actual-change timestamp); hard delete and zero-row race handling — ADR-0006, C2–C4
-- [ ] Write then pass defaults/no-op/frozen-clock/backward-clock cases — VER-APP-001
-- [ ] Write then pass free-form/invalid-status and permanent-delete/retained-Closed cases — VER-APP-002, VER-APP-003
-- [ ] Prove independent-connection commit visibility before CRM, definite write failure without CRM, pre/post-commit cancellation, and duplicate POST behavior — VER-SYS-002, VER-CRM-001
+- [x] `IInquiryService` + `InquiryService`
+- [x] Create: force New, sample injected UTC once for both timestamps, await one committed insert, then await best-effort CRM — REQ-APP-001, REQ-CRM-001, C5
+- [x] List: filter before count/page, deterministic CreatedDate+Id sorting, C4 bounds and page envelope; count/page are separate queries — REQ-API-004
+- [x] GetById; UpdateStatus (same-status no-op, actual-change timestamp); hard delete and zero-row race handling — ADR-0006, C2–C4
+- [x] Write then pass defaults/no-op/frozen-clock/backward-clock cases — VER-APP-001
+- [x] Write then pass free-form/invalid-status and permanent-delete/retained-Closed cases — VER-APP-002, VER-APP-003
+- [x] Prove independent-connection commit visibility before CRM, definite write failure without CRM, pre/post-commit cancellation, and duplicate POST behavior — VER-SYS-002, VER-CRM-001
 
 ## Phase 4 — CRM integration — ADR-0007
 
-- [ ] `ICrmClient` Task-returning port + deterministic `SimulatedCrmClient`; completion = success, exceptions = failure; no endpoint/keys or visitor-triggered failure modes — REQ-CRM-001
-- [ ] Real Polly pipeline per C6: transient-only exponential retry, maximum four attempts, inner attempt and outer total timeouts, cooperative cancellation — REQ-CRM-002, REQ-CRM-004
-- [ ] Structured attempt/final-outcome logs via `ILogger`, omitting visitor fields and raw exceptions across scopes, telemetry, middleware, and EF — REQ-CRM-003, REQ-SYS-004
-- [ ] Await sync AFTER commit; isolate CRM failure/cancellation without rolling back or replaying creation; do not swallow database errors — REQ-SYS-003
-- [ ] Write then pass create-survives-CRM-failure HTTP/SQLite integration — VER-CRM-001, VER-SYS-003
-- [ ] Write then pass real-pipeline retry/exhaustion/permanent/timeout/cancel and sink privacy cases with controlled time — VER-CRM-002, VER-CRM-003, VER-CRM-004, VER-SYS-004
+- [x] `ICrmClient` Task-returning port + deterministic `SimulatedCrmClient`; completion = success, exceptions = failure; no endpoint/keys or visitor-triggered failure modes — REQ-CRM-001
+- [x] Real Polly pipeline per C6: transient-only exponential retry, maximum four attempts, inner attempt and outer total timeouts, cooperative cancellation — REQ-CRM-002, REQ-CRM-004
+- [x] Structured attempt/final-outcome logs via `ILogger`, omitting visitor fields and raw exceptions across scopes, telemetry, middleware, and EF — REQ-CRM-003, REQ-SYS-004
+- [x] Await sync AFTER commit; isolate CRM failure/cancellation without rolling back or replaying creation; do not swallow database errors — REQ-SYS-003
+- [x] Write then pass create-survives-CRM-failure HTTP/SQLite integration — VER-CRM-001, VER-SYS-003
+- [x] Write then pass real-pipeline retry/exhaustion/permanent/timeout/cancel and sink privacy cases with controlled time — VER-CRM-002, VER-CRM-003, VER-CRM-004, VER-SYS-004
 
 ## Phase 5 — API layer — ADR-0005
 
-- [ ] `InquiriesController`: `POST /api/inquiries`, `GET /api/inquiries` (status filter + paging + sort), `GET /api/inquiries/{id}`, `PUT /api/inquiries/{id}/status`, `DELETE /api/inquiries/{id}` — REQ-API-001
-- [ ] Consistent ProblemDetails for validation/binding/routing/resource/media-type errors and sanitized exceptions in Development/Production — REQ-API-003, REQ-SYS-005, C3
-- [ ] OpenAPI/Swagger documents actual request/response shapes and errors for all five endpoints; executable manual create/update surface — REQ-API-005
-- [ ] Write then pass happy-path, validation precedence, 404/repeat-delete, checked paging, create-then-read/list, and safe-error HTTP cases — VER-API-001 through VER-API-005, VER-SYS-002, VER-SYS-005
+- [x] `InquiriesController`: `POST /api/inquiries`, `GET /api/inquiries` (status filter + paging + sort), `GET /api/inquiries/{id}`, `PUT /api/inquiries/{id}/status`, `DELETE /api/inquiries/{id}` — REQ-API-001
+- [x] Consistent ProblemDetails for validation/binding/routing/resource/media-type errors and sanitized exceptions in Development/Production — REQ-API-003, REQ-SYS-005, C3
+- [x] OpenAPI/Swagger documents actual request/response shapes and errors for all five endpoints; executable manual create/update surface — REQ-API-005
+- [x] Write then pass happy-path, validation precedence, 404/repeat-delete, checked paging, create-then-read/list, and safe-error HTTP cases — VER-API-001 through VER-API-005, VER-SYS-002, VER-SYS-005
 
+Evidence and scope: [Phases 3–5 implementation record](docs/testing/tdd-plan.md#phases-35-implementation-record).
+All 51 mapped catalog cases (IT-APP-001..020, UT-CRM-001..010, IT-API-001..021) pass.
+Aggregate model verifications with frontend or browser components remain planned
+pending Phases 6 and 9.
 ## Phase 6 — Frontend — ADR-0004
 
 - [ ] Vite + React + TypeScript in `frontend/`; Vitest/jsdom/Testing Library + user-event test harness with non-watch `test` script — ADR-0004, 0009

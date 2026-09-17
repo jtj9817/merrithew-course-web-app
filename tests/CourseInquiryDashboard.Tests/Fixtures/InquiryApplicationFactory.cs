@@ -15,13 +15,23 @@ public sealed class InquiryApplicationFactory : WebApplicationFactory<Program>
     private readonly bool ownsDatabase;
     public string DatabasePath { get; }
     public MutableTimeProvider Clock { get; } = new();
+    public string ConnectionString { get; }
+
     public LogCaptureProvider Logs { get; } = new();
     public ScriptedCrmClient Crm { get; } = new();
+    /// <summary>FIX-INTERCEPT hooks applied to the host's DbContext (set before the first client is created).</summary>
+    public List<Microsoft.EntityFrameworkCore.Diagnostics.ISaveChangesInterceptor> SaveChangesInterceptors { get; } = [];
+
 
     public InquiryApplicationFactory(string? databasePath = null)
     {
         ownsDatabase = databasePath is null;
         DatabasePath = databasePath ?? Path.Combine(Path.GetTempPath(), $"CourseInquiryTests_{Guid.NewGuid():N}.db");
+        ConnectionString = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+        {
+            DataSource = DatabasePath,
+            Pooling = false
+        }.ToString();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -32,12 +42,16 @@ public sealed class InquiryApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll<DbContextOptions<AppDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
             services.RemoveAll<AppDbContext>();
-            services.AddDbContext<AppDbContext>(options => options.UseSqlite(
-                new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+            services.AddDbContext<AppDbContext>(options =>
+            {
+                options.UseSqlite(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
                 {
                     DataSource = DatabasePath,
                     Pooling = false
-                }.ToString()));
+                }.ToString());
+                if (SaveChangesInterceptors.Count > 0)
+                    options.AddInterceptors(SaveChangesInterceptors);
+            });
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Clock);
             services.RemoveAll<ICrmClient>();

@@ -7,22 +7,19 @@ using Polly.Timeout;
 namespace CourseInquiryDashboard.Services;
 
 /// <summary>
-/// Deterministic in-process CRM simulation (ADR-0007, contract C6). There is no endpoint,
-/// credential, or visitor-triggered failure mode: completion means success and failure is
-/// an exception. The real Polly pipeline wraps the simulated operation —
+/// Deterministic in-process CRM simulation (ADR-0007, contract C6). There is no endpoint
+/// or credential: completion means success and failure is an exception. The real Polly
+/// pipeline wraps either the configured runtime simulation or a test-supplied operation —
 /// total 2 s budget → retry (3 retries after the original attempt, exponential
 /// 100/200/400 ms, no jitter, transient-only) → cooperative 500 ms per-attempt timeout.
 /// </summary>
 /// <remarks>
-/// Every attempt and the terminal outcome are logged with only allow-listed state
-/// (inquiry id, attempt, outcome, error type) — never visitor fields or raw exceptions
-/// (C6). The optional <paramref name="simulation"/> replaces the default success so
-/// tests can script outcomes through the real pipeline; it is the external boundary
-/// this port simulates, not a production stub.
+/// Every attempt and terminal outcome are logged with only allow-listed state
+/// (inquiry id, attempt, outcome, error type) — never the CRM payload, visitor fields,
+/// or raw exceptions. Runtime settings are captured once per sync so a dev-tool change
+/// cannot alter an in-flight retry sequence.
 /// </remarks>
-public sealed partial class SimulatedCrmClient(
-    ILogger<SimulatedCrmClient> logger,
-    Func<CancellationToken, Task>? simulation = null) : ICrmClient
+public sealed partial class SimulatedCrmClient : ICrmClient
 {
     /// <summary>Outer total budget for one sync, including backoff delays (C6).</summary>
     private static readonly TimeSpan TotalSyncBudget = TimeSpan.FromSeconds(2);
@@ -34,6 +31,10 @@ public sealed partial class SimulatedCrmClient(
     private static readonly TimeSpan RetryBaseDelay = TimeSpan.FromMilliseconds(100);
 
     private const int MaxRetryAttempts = 3; // original attempt + three retries = four attempts
+
+    private readonly ILogger<SimulatedCrmClient> logger;
+    private readonly CrmSimulationRuntime? runtime;
+    private readonly Func<CrmInquiryPayload, int, CancellationToken, Task>? simulation;
 
     private readonly ResiliencePipeline pipeline = new ResiliencePipelineBuilder()
         .AddTimeout(new TimeoutStrategyOptions { Timeout = TotalSyncBudget }) // outer budget, never retried
@@ -49,12 +50,38 @@ public sealed partial class SimulatedCrmClient(
         .AddTimeout(new TimeoutStrategyOptions { Timeout = AttemptTimeout })
         .Build();
 
-    private readonly Func<CancellationToken, Task> simulation =
-        simulation ?? (static _ => Task.CompletedTask);
+    /// <summary>Production constructor: execute the runtime mode selected by configuration/dev tools.</summary>
+    public SimulatedCrmClient(
+        ILogger<SimulatedCrmClient> logger,
+        CrmSimulationRuntime runtime)
+    {
+        this.logger = logger;
+        this.runtime = runtime;
+    }
+
+    /// <summary>Test seam retained for concise scripted attempt outcomes.</summary>
+    public SimulatedCrmClient(
+        ILogger<SimulatedCrmClient> logger,
+        Func<CancellationToken, Task> simulation)
+        : this(logger, (_, _, cancellationToken) => simulation(cancellationToken))
+    {
+    }
+
+    /// <summary>Payload-aware test seam for verifying the external-boundary mapping.</summary>
+    public SimulatedCrmClient(
+        ILogger<SimulatedCrmClient> logger,
+        Func<CrmInquiryPayload, int, CancellationToken, Task> simulation)
+    {
+        this.logger = logger;
+        this.simulation = simulation;
+    }
 
     public async Task SyncInquiryAsync(CourseInquiry inquiry, CancellationToken cancellationToken = default)
     {
         var attempts = 0;
+        var settings = runtime?.Current;
+        var payload = CrmInquiryPayload.From(inquiry);
+
         try
         {
             await pipeline.ExecuteAsync(
@@ -64,7 +91,16 @@ public sealed partial class SimulatedCrmClient(
                     LogAttemptStarted(inquiry.Id, attempt);
                     try
                     {
-                        await simulation(attemptToken).ConfigureAwait(false);
+                        if (runtime is not null)
+                        {
+                            await runtime.ExecuteAttemptAsync(payload, attempt, settings!, attemptToken)
+                                .ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await simulation!(payload, attempt, attemptToken).ConfigureAwait(false);
+                        }
+
                         LogAttemptOutcome(inquiry.Id, attempt, "success");
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -80,7 +116,7 @@ public sealed partial class SimulatedCrmClient(
                     }
                     catch (OperationCanceledException)
                     {
-                        // The simulated operation itself reported cancellation (UT-CRM-006).
+                        // The simulated operation itself reported cancellation.
                         LogAttemptOutcome(inquiry.Id, attempt, "cancelled");
                         throw;
                     }
@@ -93,30 +129,42 @@ public sealed partial class SimulatedCrmClient(
                 cancellationToken).ConfigureAwait(false);
 
             LogSyncOutcome(inquiry.Id, "success", attempts);
+            RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.Success, attempts);
         }
         catch (TimeoutRejectedException)
         {
             LogSyncOutcome(inquiry.Id, "timedOut", attempts);
+            RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.TimedOut, attempts);
             throw;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             LogSyncOutcome(inquiry.Id, "cancelled", attempts);
+            RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.Cancelled, attempts);
             throw;
         }
         catch (OperationCanceledException)
         {
-            // Cancellation reported without the caller's token (e.g. the simulated
-            // operation itself threw OperationCanceledException): still a cancellation
-            // outcome, still propagated.
             LogSyncOutcome(inquiry.Id, "cancelled", attempts);
+            RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.Cancelled, attempts);
             throw;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             LogSyncOutcome(inquiry.Id, "failed", ex.GetType().Name, attempts);
+            RecordSimulationResult(inquiry.Id, settings, CrmSyncOutcome.Failed, attempts);
             throw;
         }
+    }
+
+    private void RecordSimulationResult(
+        int inquiryId,
+        CrmSimulationSettings? settings,
+        CrmSyncOutcome outcome,
+        int attempts)
+    {
+        if (runtime is not null && settings is not null)
+            runtime.RecordResult(new CrmSyncResult(inquiryId, settings.Mode, outcome, attempts));
     }
 
     [LoggerMessage(EventId = 10, Level = LogLevel.Information,

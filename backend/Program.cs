@@ -21,6 +21,11 @@ builder.Services.AddSwaggerGen(options =>
         Enum = StatusNames.All.Select(name => (JsonNode)JsonValue.Create(name)!).ToList(),
     }));
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddOptions<CrmSimulationOptions>()
+    .BindConfiguration(CrmSimulationOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddSingleton<CrmSimulationRuntime>();
 builder.Services.AddScoped<IInquiryService, InquiryService>();
 builder.Services.AddSingleton<ICrmClient, SimulatedCrmClient>();
 builder.Services.AddScoped<IScenarioSeeder, ScenarioSeeder>();
@@ -80,6 +85,12 @@ app.MapControllers();
 if (DevToolsOptions.ScenarioSeedingEnabled(app.Environment, app.Configuration))
 {
     app.MapScenarioEndpoints();
+}
+
+// Dev-only runtime CRM outcome selection and safe result inspection.
+if (DevToolsOptions.CrmSimulationEnabled(app.Environment, app.Configuration))
+{
+    app.MapCrmSimulationEndpoints();
 }
 
 await app.RunAsync();

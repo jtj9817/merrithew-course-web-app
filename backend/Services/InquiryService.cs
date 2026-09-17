@@ -129,7 +129,7 @@ public sealed partial class InquiryService(
         {
             LogCrmIsolatedOutcome(inquiry.Id, "timedOut", ex.GetType().Name);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             LogCrmIsolatedOutcome(inquiry.Id, "cancelled");
         }

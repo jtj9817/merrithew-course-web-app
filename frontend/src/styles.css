@@ -654,3 +654,168 @@ noscript a {
   color: var(--ink-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Dev-only tool stack ───────────────────────────────────────────────────
+   Wraps the scenario switcher and CRM demonstrator; children render only
+   when the server shell enables the matching tools. Absent in production. */
+
+.dev-tools:empty {
+  display: none;
+}
+
+.dev-tools {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.dev-tools .dev-scenarios {
+  margin-bottom: 0;
+}
+
+.dev-tools-tag {
+  align-self: start;
+  margin-top: 2px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.dev-crm {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) repeat(3, auto);
+  align-items: end;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+.dev-crm-heading {
+  display: flex;
+  align-self: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.dev-crm-heading strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.dev-crm-heading p {
+  max-width: 54ch;
+  margin: 1px 0 0;
+}
+
+.dev-tools-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.dev-tools-field > span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.dev-tools-field select,
+.dev-tools-field input {
+  height: 30px;
+  padding: 4px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: inherit;
+}
+
+.dev-tools-field select {
+  min-width: 190px;
+}
+
+.dev-tools-field--number input {
+  width: 92px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dev-crm-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.dev-crm-actions button {
+  height: 30px;
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.dev-crm-actions button:hover:not(:disabled) {
+  border-color: var(--ink-muted);
+}
+
+.dev-crm-actions .dev-crm-run {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.dev-crm-actions .dev-crm-run:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.dev-crm-actions button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.dev-tools-status {
+  grid-column: 1 / -1;
+  min-height: 20px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 960px) {
+  .dev-crm {
+    grid-template-columns: minmax(240px, 1fr) repeat(2, auto);
+  }
+
+  .dev-crm-actions {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .dev-crm {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .dev-tools-field select,
+  .dev-tools-field--number input {
+    width: 100%;
+  }
+
+  .dev-crm-actions {
+    grid-column: auto;
+  }
+
+  .dev-crm-actions button {
+    flex: 1;
+  }
+}
+

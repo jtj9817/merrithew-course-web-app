@@ -31,6 +31,10 @@
 {
     <script>window.__scenarioTools = true;</script>
 }
+@if (Model.CrmSimulationToolsEnabled)
+{
+    <script>window.__crmSimulationTools = true;</script>
+}
 @if (Model.EntryScript is not null)
 {
     <script type="module" src="/app/@Model.EntryScript"></script>

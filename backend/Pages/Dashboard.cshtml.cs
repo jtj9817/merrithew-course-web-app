@@ -29,11 +29,18 @@ public sealed class DashboardModel : PageModel
     /// </summary>
     public bool ScenarioToolsEnabled { get; private set; }
 
+    /// <summary>
+    /// True when the dev CRM simulation controls are enabled; the shell then
+    /// exposes the flag the React island reads to render its CRM demonstrator.
+    /// </summary>
+    public bool CrmSimulationToolsEnabled { get; private set; }
+
     public void OnGet()
     {
         var links = ViteManifest.Resolve(environment.ContentRootPath);
         EntryScript = links.EntryScript;
         Stylesheets = links.Stylesheets;
         ScenarioToolsEnabled = DevToolsOptions.ScenarioSeedingEnabled(environment, configuration);
+        CrmSimulationToolsEnabled = DevToolsOptions.CrmSimulationEnabled(environment, configuration);
     }
 }

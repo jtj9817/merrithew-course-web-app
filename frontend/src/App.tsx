@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { CrmSimulationControl } from './components/CrmSimulationControl'
 import { DetailPanel } from './components/DetailPanel'
 import { InquiryTable } from './components/InquiryTable'
 import { LiveRegions } from './components/LiveRegions'
@@ -61,12 +62,14 @@ export default function App() {
     setRefreshKey((key) => key + 1)
   }, [])
 
-  // Dev-only: after a scenario is seeded or cleared, return to a clean view of
-  // the new dataset (all statuses, first page) and refetch.
-  const handleScenarioChanged = useCallback(() => {
+  // Dev-only data changes return to a clean view and always refetch, even when
+  // the queue already shows the default filter and sort.
+  const handleDevelopmentDataChanged = useCallback(() => {
     setSort(undefined)
     setRequest({ filter: 'All' })
-  }, [])
+    refreshList('other')
+  }, [refreshList])
+
 
   useEffect(() => {
     const seq = ++listSeqRef.current
@@ -212,7 +215,10 @@ export default function App() {
 
   return (
     <div className="island">
-      <ScenarioSwitcher onChanged={handleScenarioChanged} />
+      <div className="dev-tools">
+        <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} />
+        <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} />
+      </div>
 
       <Toolbar
         filter={request.filter}

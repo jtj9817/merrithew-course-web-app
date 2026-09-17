@@ -21,7 +21,7 @@ const BASE = '/api/dev/scenarios'
 
 /** True when the server shell enabled the dev scenario tools for this page. */
 export function scenarioToolsEnabled(): boolean {
-  return (window as unknown as { __scenarioTools?: boolean }).__scenarioTools === true
+  return window.__scenarioTools === true
 }
 
 /** Lists the available scenarios, or null when the endpoint is unavailable. */

@@ -3,9 +3,9 @@ window.SYSTEM_MODEL = {
   "name": "Course Inquiry Dashboard",
   "mode": "greenfield",
   "version": "0.2.0",
-  "description": "Target design for Merrithew's internal course-inquiry tool. No application code exists yet. Boundary contracts: docs/architecture/contracts.md (ADR-0009). Test-first implementation and case catalogs: docs/testing/tdd-plan.md. All verification evidence is planned, not passing.",
+  "description": "Design and implementation for Merrithew's internal course-inquiry tool, built and verified test-first through Phase 9. Boundary contracts: docs/architecture/contracts.md (ADR-0009). Test-first implementation and case catalogs: docs/testing/tdd-plan.md. Verification evidence is recorded on each verification in this model.",
   "source_of_truth": "docs/architecture/model.json",
-  "generated": "2026-09-16"
+  "generated": "2026-09-17"
  },
  "nodes": [
   {
@@ -701,7 +701,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-SYS-001"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-UI-001..030, IT-HOST-001..004 (frontend/src test files; Integration/FrontendHostTests.cs) plus browser walkthroughs (docs/testing/manual-evidence.md incl. the Phase 9 built-app pass); Vitest 52/52 + xUnit non-SqlServer 146/146 + walkthrough PASS; @5d5fbe0 2026-09-17",
    "procedure": "Run mapped IT-UI/IT-HOST cases in docs/testing/frontend-and-sql-cases.md plus MAN-UI browser triage; component tests alone do not prove real mounting."
   },
   {
@@ -712,7 +713,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-SYS-002"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-APP-001..020 (commit visibility, definite failed write, repeat POST) + IT-API create/read/list cases (Integration/InquiryServiceTests.cs, InquiriesApiTests.cs, ProcessRestartTests.cs); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-API/IT-APP cases: POST then independent GET/list, definite failed write without CRM, commit visibility and repeated submissions. See docs/testing/backend-cases.md."
   },
   {
@@ -723,7 +725,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-SYS-003"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-APP-014 (no CRM before commit), IT-APP-016 (row survives CRM exhaustion) and neighboring post-commit cancellation cases, + IT-API-018 (201 + fetchable row despite CRM failure) (Integration/InquiryServiceTests.cs, InquiriesApiTests.cs); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-APP/IT-API: force CRM failure/cancellation only after independently observed commit; retain the row and created response where the connection remains usable."
   },
   {
@@ -734,7 +737,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-SYS-004"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "UT-CRM terminal-scenario sink privacy + IT-API sanitized-500 cases (Unit/CrmPipelineTests.cs; Integration/InquiriesApiTests.cs; Fixtures/LogCaptureProvider.cs) + Phase 9 live log scan (sentinel email/phone/name 0 hits; no raw exceptions); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend UT-CRM and IT-API: inject sensitive field/exception sentinels and inspect rendered logs, structured state, scopes and exceptions through configured sinks, including telemetry."
   },
   {
@@ -745,7 +749,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-SYS-005"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-API validation/binding/404/media-type/sanitized-500 cases in Development and Production (Integration/InquiriesApiTests.cs) + Phase 9 walkthrough 400/404 probes; xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-API: validation/binding/resource/routing/media-type errors and sanitized 500s in Development and Production; inspect ProblemDetails without pinning framework wording."
   },
   {
@@ -756,7 +761,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-UI-001"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-UI list/filter/page/detail/status/feedback cases (frontend/src/components/*.test.tsx) + Phase 7/9 browser walkthroughs (docs/testing/manual-evidence.md); Vitest 52/52 + walkthrough PASS; @5d5fbe0 2026-09-17",
    "procedure": "Frontend IT-UI component integration: list/filter/page/detail/status and clear feedback. Supplement with MAN-UI browser walkthroughs."
   },
   {
@@ -767,7 +773,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-UI-002"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "UT-UI-001..005 + IT-UI stale-response/keyboard/live-region cases (frontend/src test files) + IT-HOST-001..004 compiled-asset hosting (Integration/FrontendHostTests.cs); Vitest 52/52 + xUnit non-SqlServer 146/146 + keyboard/focus walkthrough PASS; @5d5fbe0 2026-09-17",
    "procedure": "Frontend UT-UI, IT-UI and IT-HOST: controlled stale responses, recovery, safe text, keyboard/focus/live regions and real compiled Razor assets. Browser checks cover actual mounting/layout."
   },
   {
@@ -778,7 +785,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-API-001"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-API-001..021 five-endpoint workflows (Integration/InquiriesApiTests.cs) + clean-checkout smoke (201+Location, 200 envelope, 204, 404 problem+json); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-API: all five endpoints through the real HTTP pipeline, including Location/readback, response DTOs, updates and permanent deletion."
   },
   {
@@ -789,7 +797,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-API-002"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "UT-VAL-001..011 + DTO-HTTP-001..010 + IT-API binding/validation cases (Unit/CreateInquiryValidationTests.cs, UpdateStatusDtoValidationTests.cs, StatusParsingTests.cs; Integration/DtoHttpTests.cs, InquiriesApiTests.cs); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend UT-VAL rules plus IT-API representative HTTP binding: missing/blank/length/email/type errors, optional fields and ignored overposting; invalid requests cause no write or sync."
   },
   {
@@ -800,7 +809,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-API-003"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-API missing/invalid-id, repeat-delete and deletion-race mapping cases (Integration/InquiriesApiTests.cs) + Phase 9 404 probe + clean-checkout DELETE 204 then 404 problem+json; xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-API: GET/PUT/DELETE unknown IDs, invalid route IDs, second DELETE, validation-before-lookup and controlled concurrent deletion return contract C3 errors."
   },
   {
@@ -811,7 +821,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-API-004"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-APP filtered-paging/sorting + IT-API query-boundary cases (Integration/InquiryServiceTests.cs, InquiriesApiTests.cs) + Phase 9 walkthrough paging (2 pages, disabled end controls); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-APP/IT-API: mixed statuses/tied dates, both sort directions, exact page and filtered total, empty/past-end pages and invalid/overflowing inputs."
   },
   {
@@ -822,7 +833,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-API-005"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-API OpenAPI-document case (Integration/InquiriesApiTests.cs) + Phase 9 Swagger UI manual create/update (201 then 200, verified by GET); xUnit non-SqlServer 146/146 + walkthrough PASS; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-API inspects generated OpenAPI operations, DTO/status/page shapes and responses; manually create/update through Swagger. Avoid a whole-document snapshot."
   },
   {
@@ -833,7 +845,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-APP-001"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-APP-001 (forced New, CreatedDate==UpdatedDate, fresh-context re-read: InquiryServiceTests.cs:42-52), IT-APP-003 (UpdatedDate advances, CreatedDate immutable: :101-102), IT-API-001/010 repeat the contract over HTTP (InquiriesApiTests.cs:50-52, 239-242); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-APP/IT-API: fixed-time create, overposting isolation, later actual update, no-op, frozen/backward clock and fresh-context UTC readback."
   },
   {
@@ -844,7 +857,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-APP-002"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "UT-VAL status parsing/membership + IT-APP free-form/no-op/guard + IT-API invalid-status 400 cases (Unit/UpdateStatusDtoValidationTests.cs, StatusParsingTests.cs; Integration/InquiryServiceTests.cs, InquiriesApiTests.cs); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend UT-VAL/IT-APP/IT-API: corrections both ways including reopening; reject omitted/null/numeric/composite/unknown wire values and invalid internal enums without mutation."
   },
   {
@@ -855,7 +869,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-APP-003"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-APP hard-delete/retained-Closed/concurrency cases + IT-API repeat-delete 404 (Integration/InquiryServiceTests.cs, InquiriesApiTests.cs); xUnit non-SqlServer 146/146 + clean-checkout DELETE/404 smoke; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-APP/IT-API: deleted rows disappear from fresh reads/counts, repeat delete is 404, Closed remains queryable/reopenable, deletion races never resurrect rows."
   },
   {
@@ -866,7 +881,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-DATA-001"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-DATA-001..005 fresh-context round-trips (Integration/PersistenceTests.cs) + IT-API read-after-create (InquiriesApiTests.cs); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-DATA and create/read IT-API: real migrations/provider, fresh-context Unicode/null/status/UTC round-trip and no false success from tracked entities."
   },
   {
@@ -877,7 +893,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-DATA-002"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-SQL-001..008 (SqlServer/CourseInquirySqlScriptTests.cs): database.sql verbatim + three report queries on disposable SQL Server 2022 (docker mcr.microsoft.com/mssql/server:2022-latest; CourseInquiryTests_* databases dropped, zero leftovers); xUnit SqlServer 8/8; @5d5fbe0 2026-09-17",
    "procedure": "IT-SQL in docs/testing/frontend-and-sql-cases.md: execute shipped script/query bodies on disposable SQL Server; assert schema/samples, fixed seven-day cutoffs, status totals and normalized duplicate groups. Missing engine blocks evidence."
   },
   {
@@ -888,7 +905,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-DATA-003"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-DATA startup-migration/restart/fatal-failure cases (Integration/PersistenceTests.cs, ProcessRestartTests.cs, TestOnlyFatalMigration.cs) + clean-checkout first-run migration (backend/inquiries.db created before listening); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-DATA: boot on an empty temporary SQLite file, create rows, restart against the same file, and force fatal migration failure without fallback."
   },
   {
@@ -899,7 +917,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-CRM-001"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "IT-APP-016 (row survives CRM exhaustion, no exception escapes create: InquiryServiceTests.cs:408-431), IT-APP-014 (no CRM before commit: :354-373), IT-API-018 (201 + fetchable row: InquiriesApiTests.cs:387-400); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend IT-APP/IT-API: injected transient/permanent/unexpected CRM exceptions cannot remove an independently committed row or turn a connected create into a CRM error."
   },
   {
@@ -910,7 +929,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-CRM-002"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "UT-CRM-001..010 on the real Polly pipeline (Unit/CrmPipelineTests.cs): transient retry then success, 4-attempt exhaustion, 100/200/400 ms backoff, permanent-failure no-retry; xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend UT-CRM: real Polly pipeline with controlled attempts/time; transient failure then success, maximum four attempts, 100/200/400ms backoff and no permanent-error retry."
   },
   {
@@ -921,7 +941,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-CRM-003"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "UT-CRM sink privacy across terminal scenarios (Unit/CrmPipelineTests.cs, Fixtures/LogCaptureProvider.cs) + IT-API sanitized-500 + Phase 9 live log scan (CRM lines carry inquiry id/attempt/outcome only); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend UT-CRM/IT-API: started attempts and final outcomes contain persisted ID and safe metadata, never sensitive payloads or raw exceptions on any sink channel."
   },
   {
@@ -932,7 +953,8 @@ window.SYSTEM_MODEL = {
    "verifies": [
     "REQ-CRM-004"
    ],
-   "status": "planned",
+   "status": "passing",
+   "evidence": "UT-CRM attempt/total timeout and cancellation cases + IT-APP post-commit cancellation durability (Unit/CrmPipelineTests.cs; Integration/InquiryServiceTests.cs); xUnit non-SqlServer 146/146; @5d5fbe0 2026-09-17",
    "procedure": "Backend UT-CRM and IT-APP: attempt timeout, outer total budget, cancellation before/during attempts or backoff, no subsequent retries, and preserved post-commit data."
   }
  ],
@@ -1119,8 +1141,8 @@ window.SYSTEM_MODEL = {
    "id": "ann.greenfield",
    "target": "sys.dashboard",
    "kind": "note",
-   "text": "Target design only: no application/test code. Contracts in docs/architecture/contracts.md and TDD/cases in docs/testing/. All verifications are planned; coverage is not passing evidence.",
-   "author": "Planning session 2026-09-16"
+   "text": "Designed greenfield, then implemented test-first through Phase 9; every verification now carries its passing evidence in-model (see each verification's evidence field and docs/testing/tdd-plan.md). Contracts in docs/architecture/contracts.md and TDD/cases in docs/testing/.",
+   "author": "Planning session 2026-09-16; verified 2026-09-17"
   },
   {
    "id": "ann.delete",

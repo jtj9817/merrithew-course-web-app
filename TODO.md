@@ -1,7 +1,8 @@
 # TODO — Course Inquiry Dashboard
 
-Implementation checklist for the target design. **Phases 0–2 are implemented and
-verified**; service, CRM, inquiry endpoints, and dashboard work remain below.
+Implementation checklist for the target design. **All phases 0–9 are
+implemented and verified**; the loop is closed — see the
+[Phase 9 implementation record](docs/testing/tdd-plan.md#phase-9-implementation-record).
 **ADR** = decision record in `docs/architecture/adr/`;
 **REQ/VER** = requirement / verification in `docs/architecture/model.json`.
 The load-bearing rule is **persist first, sync second**.
@@ -19,7 +20,8 @@ precedence when adjacent phases need to be interleaved.
 
 [Boundary contracts C1–C8](docs/architecture/contracts.md) settle input limits,
 status omission, no-op updates, paging, cancellation, retry budgets, and SQL
-query semantics. All listed verification statuses remain **planned** until run.
+query semantics. All verification statuses are **passing** with recorded
+evidence in the model (flipped 2026-09-17 after the Phase 9 full-suite re-run).
 
 ---
 
@@ -139,9 +141,23 @@ full-suite pass and the model `planned → passing` update remain Phase 9 work.
 
 ## Phase 9 — Verify & close the loop
 
-- [ ] Run the built app without a Vite dev server; exercise Swagger and triage, keyboard/focus, safe feedback, and sanitized logs using synthetic data
-- [ ] Update model verifications from `planned` to `passing` only after all mapped cases/supplemental checks run; record test paths, command/result/revision, then regenerate diagrams
-- [ ] Verify setup from a clean checkout, complete written answers, and review every item of the spec's Submission Requirements checklist; report blocked evidence explicitly
+- [x] Run the built app without a Vite dev server; exercise Swagger and triage, keyboard/focus, safe feedback, and sanitized logs using synthetic data
+- [x] Update model verifications from `planned` to `passing` only after all mapped cases/supplemental checks run; record test paths, command/result/revision, then regenerate diagrams
+- [x] Verify setup from a clean checkout, complete written answers, and review every item of the spec's Submission Requirements checklist; report blocked evidence explicitly
+
+Evidence and scope: [Phase 9 implementation record](docs/testing/tdd-plan.md#phase-9-implementation-record)
+and [manual evidence](docs/testing/manual-evidence.md#phase-9--built-app-walkthrough-no-vite-dev-server).
+Full three-lane re-run at `5d5fbe0`: 146 non-SqlServer xUnit + 52 Vitest + 8
+SqlServer all passing; built-app walkthrough (compiled `/app/assets/*`, no dev
+server) all PASS including "Status saved." feedback, keyboard triage, XSS
+inertness, Swagger manual create/update, and a zero-hit PII sentinel log scan;
+all 22 model verifications flipped to `passing` with per-entry evidence paths
+and revision; diagrams regenerated (traceability now reads 22/22). Clean
+checkout verified against README verbatim; its two findings were fixed in the
+docs (README port-override note incl. the `--no-launch-profile`/Development
+trap, AGENTS.md `#dashboard-root` mount point). No blocked evidence; tooling
+substitutions (Space-on-select, swagger-ui editor fill, viewport emulation)
+are recorded in the record's scope notes.
 
 ---
 

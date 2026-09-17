@@ -201,7 +201,7 @@ builder.Services.AddScoped<ICrmClient, SimulatedCrmClient>();
   - Phone: `***-***-1234`
 
 ### State Management & Frontend Architecture
-- **Server**: Stateless REST API; the Razor Pages shell serves the host HTML container (`<div id="root"></div>`) without holding session state.
+- **Server**: Stateless REST API; the Razor Pages shell serves the host HTML container (`<div id="dashboard-root"></div>`) without holding session state.
 - **Client**: React functional components with standard hooks (`useState`, `useEffect`, `useCallback`) managing inquiry data, active filter selection, pagination index, modal visibility, and mutation loading/error states.
 - **Networking**: Frontend communicates with same-origin `/api/inquiries` via `fetch()`, avoiding CORS configuration.
 

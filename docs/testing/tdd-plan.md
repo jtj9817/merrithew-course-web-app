@@ -552,6 +552,116 @@ JavaScript-disabled browser (see [`manual-evidence.md`](manual-evidence.md)).
   until Phase 9 collects per-verification evidence; Phase 7 verifies the case
   layer beneath them.
 
+## Phase 9 implementation record
+
+Executed 2026-09-17 against code revision `5d5fbe0` (tree clean at start;
+Phase 9 changed only documentation, the model verification statuses, and
+regenerated diagrams — no production code). Phase 9 closes the loop: full
+three-lane suite re-run, built-app walkthrough without a dev server, model
+`planned → passing` with per-verification evidence, clean-checkout setup
+verification, and the submission checklist review.
+
+### 1. Full-suite re-run (all lanes green)
+
+| Lane | Command | Result |
+| --- | --- | --- |
+| Frontend | `pnpm --dir frontend install --frozen-lockfile` → `pnpm --dir frontend run build` → `pnpm --dir frontend test` | lockfile up to date; manifest + `index-*.js/css` emitted to `backend/wwwroot/app/`; **Vitest 52/52** (8 files, 8.7 s) |
+| .NET local | `dotnet build --warnaserror` → `dotnet format --verify-no-changes` → `dotnet test --filter 'Category!=SqlServer'` | 0 warnings / 0 errors; format clean; **146/146** (IT-HOST exercised the freshly compiled assets) |
+| SQL Server | fresh disposable container `merrithew-phase9-sql` (`mcr.microsoft.com/mssql/server:2022-latest`, `127.0.0.1:15441→1433`, connection string with `Initial Catalog=CourseInquiryTests_bootstrap` + `TrustServerCertificate=True`) → `dotnet test --filter 'Category=SqlServer'` | **8/8** (IT-SQL-001..008); post-run `sys.databases` probe found zero leftover `CourseInquiryTests_*` databases; container removed |
+
+Results match the recorded Phase 7 gate exactly.
+
+### 2. Built-app walkthrough (no Vite dev server)
+
+All checks PASS — compiled-asset serving (zero dev-server references), triage
+filter/empty-state/paging, detail drawer, "Status saved." polite live region
+with reload persistence, keyboard-only triage (Tab path, ArrowDown+Enter
+status change, drawer focus in/Escape/focus return), XSS inertness, clean
+console, Swagger UI manual create (201) + update (200), and sanitized logs
+(PII sentinel email/phone/name: 0 hits in the full console capture; CRM lines
+carry inquiry id/attempt/outcome only; zero stack traces). Full table and
+verbatim log lines in
+[`manual-evidence.md`](manual-evidence.md#phase-9--built-app-walkthrough-no-vite-dev-server);
+screenshots in `screenshots/phase9/`.
+
+### 3. Model verification update + diagram regeneration
+
+All **22** verifications in `docs/architecture/model.json` flipped
+`planned → passing`, each gaining an `evidence` field (test paths, lane
+results, revision `@5d5fbe0 2026-09-17`; commands in §1). The model header
+description and `ann.greenfield` were updated off their pre-implementation
+wording ("no application code exists yet" / "All verifications are planned").
+Validator: 0 errors, 0 warnings. Diagrams regenerated with
+`uv run --python 3.12 scripts/render_architecture.py` — system Python is 3.10
+and the renderer requires 3.12+, so it runs through `uv`'s CPython 3.12.5 —
+producing 10 pages; the traceability page now reads "Verification evidence:
+22/22 passing."
+
+### 4. Clean-checkout setup verification
+
+A fresh `git clone` followed README.md verbatim: `dotnet restore` →
+`dotnet tool restore` → `pnpm install`/`pnpm build` (frontend) → `dotnet run
+--project backend` — every documented command worked in order; ~30 s of tool
+time from clone to a listening app. The island contract held
+(`backend/wwwroot/app/` is git-ignored: absent before the frontend build,
+present after); startup migrations created `backend/inquiries.db` before
+listening; the smoke pass hit every documented route with the documented
+codes (201 + Location, 200 envelope, 204, 404 `application/problem+json`,
+302 `/` → `/dashboard`, Swagger doc + UI 200 with all five inquiry paths).
+
+Findings fixed in the docs this phase: README gained the port-override note
+(`ASPNETCORE_URLS` alone is overridden by the launch profile;
+`--no-launch-profile` requires re-setting `ASPNETCORE_ENVIRONMENT=Development`
+or Swagger silently disappears), AGENTS.md's mount point was corrected to
+`#dashboard-root`, and the AI-tools disclosure now names both assistants
+actually used.
+
+### 5. Spec Submission Requirements checklist
+
+| Spec item (option-1-course-inquiry-dashboard.md:108-120) | Status |
+| --- | --- |
+| 1. Source code for the project | backend/, frontend/, tests/, docs/ — clean-checkout build + run verified this phase |
+| 2. README with setup/run, assumptions, improvements | verified end-to-end; the port-override gap found by the clean-checkout pass was fixed |
+| 3. A `database.sql` file | `database/database.sql`, executed verbatim on SQL Server 2022 by IT-SQL-001..008 (8/8) |
+| 4. Written answers (troubleshooting, security, accessibility, code quality) | all four sections present in `written-answers.md`, no stubs (written in Phase 8, re-checked) |
+| 5. ≥1 meaningful automated test (business rule / validation / service) | 146 xUnit + 52 Vitest + 8 SQL Server tests; VER-APP-001 and VER-CRM-001 covered as primary mapped business-rule evidence |
+| AI-tools disclosure | README "AI tools used" names Claude Code and ZCode |
+| Submission packaging (repo link / ZIP / folder) | the Git repository is the deliverable; final submission is the author's action |
+
+No blocked evidence: every mapped case and supplemental check ran this phase.
+The two tooling substitutions inside the walkthrough are recorded below.
+
+### Honest scope notes
+
+- Agent fan-out: the Agent tool again rejected `general-purpose` dispatches
+  (`reasoning-level-missing`, same provider fault as Phase 7), but all four
+  `scout` dispatches succeeded — local gate, SQL lane (in an isolated clone to
+  avoid build-output collisions), clean checkout, and the browser walkthrough
+  (Chrome driven through the global `chrome-devtools` CLI over Bash).
+- Walkthrough tooling caveats (all recorded in manual-evidence.md): Space on a
+  native `<select>` opens a popup the headless driver cannot operate, so
+  ArrowDown+Enter stands in as the keyboard activation; swagger-ui's editor
+  needed a native value setter before Execute (the first attempt posted the
+  example body; the artifact row was deleted and the POST redone);
+  `resize_page` never changed the viewport, so the 375 px screenshot used
+  viewport emulation.
+- No request-logging middleware exists, so the 400/404 probes emit no log
+  lines at all; the log-privacy evidence is the complete 130-line console
+  capture (retained at `/tmp/phase9-app.log`, quoted in manual-evidence.md) —
+  an ephemeral path, which is why the verbatim lines are copied into the
+  evidence file.
+- Verification evidence cites revision `5d5fbe0` — the code revision under
+  test; the working tree additionally carries this phase's
+  documentation/model changes uncommitted.
+- Synthetic seed rows (ids 6–23, 25) remain in the git-ignored dev SQLite
+  file; synthetic only, left for local continuity.
+- A stale `merrithew-phase012-sql` container from an earlier session (up 9 h,
+  port 15439) was observed and left for its owner to remove; this phase's own
+  container was torn down.
+- As in Phase 7, the Microsoft Learn MCP and dotnet-specific skills are not
+  available in this session's toolset; nothing in Phase 9 required them (the
+  guidance used across the project is recorded under "Primary guidance used").
+
 ## Primary guidance used
 
 - Microsoft Learn: [ASP.NET Core integration tests](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-10.0) for WebApplicationFactory, actual HTTP-pipeline testing, and explicit test-host environments. Its project-separation recommendation is implemented here as category/directory separation in the small, already planned test project.

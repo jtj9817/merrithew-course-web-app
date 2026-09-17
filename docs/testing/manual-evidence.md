@@ -1,9 +1,12 @@
-# Manual Evidence — Phase 7 Regression Gate
+# Manual Evidence — Live-App Verification
 
-Recorded 2026-09-17. Manual/live-app evidence for Phase 7 of
-[`TODO.md`](../../TODO.md), kept separate from automated suite results per the
-catalog's evidence policy. Automated results live in the
-[Phase 7 implementation record](tdd-plan.md#phase-7-implementation-record).
+Manual/live-app evidence for [`TODO.md`](../../TODO.md), kept separate from
+automated suite results per the catalog's evidence policy: the
+[Phase 7 regression gate](#live-app-smoke-swagger-surfaces) and the
+[Phase 9 built-app walkthrough](#phase-9--built-app-walkthrough-no-vite-dev-server).
+Automated results live in the
+[Phase 7](tdd-plan.md#phase-7-implementation-record) and
+[Phase 9](tdd-plan.md#phase-9-implementation-record) implementation records.
 
 Environment: .NET SDK 10.0.112, pnpm 10.33.0 / node v22.22.0, Chrome via
 chrome-devtools automation. App run from the Phase 7 commit with
@@ -80,3 +83,49 @@ Captured by the browser-agent pass (viewport restored to 1280×800 afterwards):
 
 Visual review verdicts are recorded in the
 [Phase 7 implementation record](tdd-plan.md#phase-7-implementation-record).
+
+## Phase 9 — built-app walkthrough (no Vite dev server)
+
+Recorded 2026-09-17. Executes TODO.md Phase 9 item 1: run the built app without
+a Vite dev server; exercise Swagger and triage, keyboard/focus, safe feedback,
+and sanitized logs using synthetic data. Automated counterpart:
+[Phase 9 implementation record](tdd-plan.md#phase-9-implementation-record).
+
+Environment: same toolchain as Phase 7 (SDK 10.0.112, pnpm 10.33.0 / node
+v22.22.0, Chrome via chrome-devtools automation). App run from code revision
+`5d5fbe0` with `ASPNETCORE_URLS=http://127.0.0.1:5844
+ASPNETCORE_ENVIRONMENT=Development dotnet run --project backend
+--no-launch-profile`; full console capture retained at `/tmp/phase9-app.log`
+(130 lines). Served `/dashboard` referenced the compiled
+`/app/assets/index-Bar7Dhul.js` + `index-CYkj0GM8.css`; grep for `5173` in the
+served HTML and the built bundle: 0; no Vite process or listener for this repo.
+
+Seeded synthetic data: 18 new rows via the REST surface over the 5 pre-existing
+dev rows — a PII sentinel (id 6: `sentinel.ph9@example.com`, `416-555-0199`),
+an XSS probe (id 7: `<img src=x onerror=window.__xss=1>` first name,
+`<script>window.__pwn=1</script>` message), and filler rows across all five
+statuses (ids 8–23).
+
+### MAN-P9 — Swagger, triage, keyboard, feedback, logs
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Compiled island, no dev server | PASS | network log shows only same-origin `/app/assets/*` (200) + favicon (200); 23 rows rendered, filter/sort/pager present |
+| Triage: filter + empty state + paging | PASS | filter `New` → "15 inquiries" all New; filter `Pending` → "0 inquiries" + empty-state text; pager "Page 1 of 2" ↔ "Page 2 of 2" with disabled end controls |
+| Detail drawer | PASS | sentinel row drawer shows all fields (id, names, email, phone, course, location, message, status, timestamps) |
+| Status update + safe feedback | PASS | id 23 New→Contacted via row select + Apply; polite live region exactly "Status saved." (assertive empty); persisted across cache-bypassed reload (curl-verified) |
+| Keyboard/focus | PASS | Tab path: filter → sort → per row (Details → status select → Apply); ArrowDown+Enter status change saved ("Status saved.", id 21 Pending, curl-verified); Enter opens drawer with `activeElement` = panel; Escape closes and focus returns to opener. Caveat: Space-on-select opens a native popup the headless driver cannot operate — ArrowDown+Enter used as the equivalent activation |
+| XSS inertness | PASS | probe row renders as escaped literal text; `img[src=x]` absent; `window.__xss`/`window.__pwn` undefined after render, drawer open, filtering, reloads; no dialogs |
+| Console clean | PASS | dashboard session: zero console messages (favicon 200); Swagger page shows only a third-party swagger-ui form-field DevTools notice, not app code |
+| Swagger manual create/update | PASS | Swagger UI Try-it-out POST → displayed 201 (`id` 25, body echoed); PUT status → 200; GET confirms `Registered`. Tooling note: the CLI's fill first posted swagger-ui's *example* body (id 24, `"string"` fields) — deleted (204) and redone via native value setter |
+| Sanitized logs | PASS | sentinel greps on the full capture: `sentinel.ph9@example.com` 0, `sentinel.ph9` 0, `416-555-0199` 0, `Sandra` 0, broader `@example.com`/`416-555`/`Filler` 0; stack traces (`at System.`, `Exception:`) 0. Verbatim CRM line: `CRM sync attempt 1 for inquiry 6 ended with outcome success` (inquiry id/attempt/outcome only). 400/404 probes (missing email → ValidationProblemDetails; unknown id PUT → ProblemDetails) produce no log lines — no request-logging middleware — so no response PII can leak |
+
+Screenshots (this walkthrough):
+
+| File | Captured at |
+| --- | --- |
+| `screenshots/phase9/dashboard-desktop-1280.png` | 1280×900 desktop, 23 rows |
+| `screenshots/phase9/detail-drawer-open.png` | sentinel drawer open, all fields |
+| `screenshots/phase9/dashboard-mobile-375.png` | 375×812 @2x (viewport emulation; `resize_page` ineffective in this driver) |
+
+Synthetic seed rows (ids 6–23 and 25) remain in the git-ignored dev SQLite file.

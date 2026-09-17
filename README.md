@@ -53,6 +53,15 @@ The HTTP profile listens at **`http://localhost:5083`**
 | `/swagger` | OpenAPI UI — **Development only** — for create/delete and manual calls. |
 | `/api/inquiries` | The Web API (below). |
 
+To serve on a different port, `ASPNETCORE_URLS` alone is not enough — the launch
+profile overrides it. Use `--no-launch-profile` and set the environment back to
+`Development`, or Swagger silently disappears (the launch profile is what sets it):
+
+```bash
+ASPNETCORE_URLS=http://127.0.0.1:5000 ASPNETCORE_ENVIRONMENT=Development \
+  dotnet run --project backend --no-launch-profile
+```
+
 Startup runs `Database.MigrateAsync()` before listening, creating
 `backend/inquiries.db` on first run; a migration failure is **fatal** (no in-memory
 fallback). Override the connection string with the
@@ -101,9 +110,13 @@ dotnet test --filter 'Category=SqlServer'
 ```
 
 The latest full-suite results are recorded in the
-[Phase 7 regression gate](docs/testing/tdd-plan.md#phase-7-implementation-record):
-146 non-SqlServer .NET tests, 52 Vitest tests, and 8 SQL Server tests, all passing,
-plus [manual browser evidence](docs/testing/manual-evidence.md).
+[Phase 9 verification record](docs/testing/tdd-plan.md#phase-9-implementation-record):
+146 non-SqlServer .NET tests, 52 Vitest tests, and 8 SQL Server tests, all
+passing at `5d5fbe0`, plus the
+[manual browser evidence](docs/testing/manual-evidence.md) (Phase 7 gate and
+the Phase 9 built-app walkthrough without a dev server). Every verification in
+the [architecture model](docs/architecture/model.json) records its passing
+evidence, and the traceability diagram reports 22/22.
 
 ## Project layout
 
@@ -175,8 +188,9 @@ Deliberate scope trade-offs, each recorded against the ADR that accepted it:
 
 ## AI tools used
 
-This project was developed with **Claude Code** (Anthropic) as a coding assistant,
-under human direction and review. It was used to: draft the architecture decision
+This project was developed with **Claude Code** (Anthropic) and **ZCode** (Z.ai)
+coding assistants, under human direction and review. They were used to: draft the
+architecture decision
 records, domain model, and boundary contracts under `docs/`; implement the backend,
 frontend, and tests following a test-first (red → green → refactor) workflow; run
 and report the test suites; and write this documentation. All design decisions,

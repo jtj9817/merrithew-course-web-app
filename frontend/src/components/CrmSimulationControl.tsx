@@ -7,11 +7,18 @@ import {
   updateCrmSimulation,
 } from '../lib/crmSimulation'
 import type { CrmSimulationCatalog, CrmSimulationSettings, CrmSyncResult } from '../lib/crmSimulation'
+import { CrmSyncLogModal } from './CrmSyncLogModal'
+import type { CrmSyncRun } from './CrmSyncLogModal'
+import { LinearProgress, Spinner } from './Progress'
 
 interface CrmSimulationControlProps {
   /** Called after the demonstration inquiry is created so the queue reloads. */
   onInquiryCreated: () => void
+  /** Routes the outcome to the shared triage snackbar. */
+  onNotify: (message: string, variant: 'info' | 'error') => void
 }
+
+type PendingAction = 'apply' | 'run' | null
 
 function resultMessage(result: CrmSyncResult): string {
   const attemptLabel = `${result.attempts} ${result.attempts === 1 ? 'attempt' : 'attempts'}`
@@ -19,11 +26,11 @@ function resultMessage(result: CrmSyncResult): string {
     case 'Success':
       return `Inquiry #${result.inquiryId} created. CRM sync succeeded after ${attemptLabel}.`
     case 'Failed':
-      return `Inquiry #${result.inquiryId} created and kept. CRM sync failed after ${attemptLabel} — the stored inquiry is unaffected.`
+      return `Inquiry #${result.inquiryId} created and kept. CRM sync failed after ${attemptLabel}; the stored inquiry is unaffected.`
     case 'TimedOut':
-      return `Inquiry #${result.inquiryId} created and kept. CRM sync timed out after ${attemptLabel} — the stored inquiry is unaffected.`
+      return `Inquiry #${result.inquiryId} created and kept. CRM sync timed out after ${attemptLabel}; the stored inquiry is unaffected.`
     case 'Cancelled':
-      return `Inquiry #${result.inquiryId} created and kept. CRM sync was cancelled after ${attemptLabel} — the stored inquiry is unaffected.`
+      return `Inquiry #${result.inquiryId} created and kept. CRM sync was cancelled after ${attemptLabel}; the stored inquiry is unaffected.`
   }
 }
 
@@ -33,14 +40,17 @@ function resultMessage(result: CrmSyncResult): string {
  * demo inquiry appears in the normal queue; server logs carry the attempt trail.
  * Renders nothing unless the shell set window.__crmSimulationTools.
  */
-export function CrmSimulationControl({ onInquiryCreated }: CrmSimulationControlProps) {
+export function CrmSimulationControl({ onInquiryCreated, onNotify }: CrmSimulationControlProps) {
   const enabled = crmSimulationToolsEnabled()
   const [catalog, setCatalog] = useState<CrmSimulationCatalog | null>(null)
   const [settings, setSettings] = useState<CrmSimulationSettings | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [status, setStatus] = useState('')
+  const [pending, setPending] = useState<PendingAction>(null)
+  const [lastRun, setLastRun] = useState<CrmSyncRun | null>(null)
+  const [logOpen, setLogOpen] = useState(false)
   const onInquiryCreatedRef = useRef(onInquiryCreated)
   onInquiryCreatedRef.current = onInquiryCreated
+  const onNotifyRef = useRef(onNotify)
+  onNotifyRef.current = onNotify
 
   useEffect(() => {
     if (!enabled) {
@@ -61,55 +71,68 @@ export function CrmSimulationControl({ onInquiryCreated }: CrmSimulationControlP
     return null
   }
 
+  const busy = pending !== null
   const selectedMode = catalog.modes.find((mode) => mode.name === settings.mode)
 
   const apply = async (): Promise<boolean> => {
-    setBusy(true)
-    setStatus('Applying CRM behavior…')
+    setPending('apply')
     const updated = await updateCrmSimulation(settings)
     if (!updated) {
-      setStatus('CRM behavior could not be updated — check the values and retry.')
-      setBusy(false)
+      onNotifyRef.current('CRM behavior could not be updated. Check the values and try again.', 'error')
+      setPending(null)
       return false
     }
     setSettings(updated)
     const label = catalog.modes.find((mode) => mode.name === updated.mode)
-    setStatus(`${updated.mode} is active for new inquiries. ${label?.description ?? ''}`.trim())
-    setBusy(false)
+    onNotifyRef.current(
+      `${updated.mode} is active for new inquiries. ${label?.description ?? ''}`.trim(),
+      'info',
+    )
+    setPending(null)
     return true
   }
 
   const runDemo = async () => {
-    setBusy(true)
-    setStatus('Running one inquiry through the CRM simulation…')
+    setPending('run')
 
     const updated = await updateCrmSimulation(settings)
     if (!updated) {
-      setStatus('CRM behavior could not be updated; no inquiry was created.')
-      setBusy(false)
+      onNotifyRef.current('CRM behavior could not be updated; no inquiry was created.', 'error')
+      setPending(null)
       return
     }
     setSettings(updated)
 
     const inquiryId = await createCrmDemoInquiry()
     if (inquiryId === null) {
-      setStatus('The demonstration inquiry could not be created.')
-      setBusy(false)
+      onNotifyRef.current('The demonstration inquiry could not be created.', 'error')
+      setPending(null)
       return
     }
 
     onInquiryCreatedRef.current()
     const result = await fetchCrmSyncResult(inquiryId)
-    setStatus(
-      result
-        ? resultMessage(result)
-        : `Inquiry #${inquiryId} created, but its CRM result was unavailable — check server logs.`,
-    )
-    setBusy(false)
+    if (result) {
+      setLastRun({ result, settings: updated })
+      onNotifyRef.current(resultMessage(result), result.outcome === 'Success' ? 'info' : 'error')
+    } else {
+      onNotifyRef.current(
+        `Inquiry #${inquiryId} created, but its CRM result was unavailable. Check the server logs.`,
+        'error',
+      )
+    }
+    setPending(null)
   }
 
   return (
-    <aside className="dev-crm" aria-label="Developer CRM simulation tools">
+    <aside className="dev-crm" aria-label="Developer CRM simulation tools" aria-busy={busy}>
+      {busy && (
+        <div className="dev-tool-progress">
+          <LinearProgress
+            label={pending === 'run' ? 'Running the CRM simulation' : 'Applying CRM behavior'}
+          />
+        </div>
+      )}
       <div className="dev-crm-heading">
         <span className="dev-tools-tag">DEV</span>
         <div>
@@ -181,16 +204,26 @@ export function CrmSimulationControl({ onInquiryCreated }: CrmSimulationControlP
 
       <div className="dev-crm-actions">
         <button type="button" onClick={() => void apply()} disabled={busy}>
+          {pending === 'apply' && <Spinner size={16} />}
           Apply
         </button>
         <button type="button" className="dev-crm-run" onClick={() => void runDemo()} disabled={busy}>
+          {pending === 'run' && <Spinner size={16} />}
           Run demo inquiry
         </button>
+        {lastRun && (
+          <button
+            type="button"
+            className="dev-crm-log"
+            onClick={() => setLogOpen(true)}
+            disabled={busy}
+          >
+            View sync log
+          </button>
+        )}
       </div>
 
-      <span className="dev-tools-status" role="status" aria-live="polite">
-        {status}
-      </span>
+      <CrmSyncLogModal run={logOpen ? lastRun : null} onClose={() => setLogOpen(false)} />
     </aside>
   )
 }

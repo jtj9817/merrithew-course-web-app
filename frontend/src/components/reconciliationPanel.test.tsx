@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ReconciliationPanel } from './ReconciliationPanel'
 import { jsonResponse, installFetchDouble } from '../test/fetchDouble'
@@ -73,6 +73,31 @@ describe('ReconciliationPanel', () => {
     expect(
       double.calls.filter((call) => call.url === '/api/dev/reconciliation'),
     ).toHaveLength(2)
+  })
+
+  it('keeps the spinner up when the superseded fetch settles after a token change', async () => {
+    const first = double.queueDeferred()
+    const { rerender } = render(<ReconciliationPanel reloadToken={0} />)
+    expect(document.querySelector('.dev-recon-spinner')).not.toBeNull()
+
+    const second = double.queueDeferred()
+    rerender(<ReconciliationPanel reloadToken={1} />)
+
+    // The superseded request settles after the token change (the double ignores
+    // the abort signal, exactly like a slow network would); it must not clear
+    // the replacement run's loading state or render its stale report.
+    await act(async () => {
+      first.resolve(report())
+    })
+    expect(document.querySelector('.dev-recon-spinner')).not.toBeNull()
+    expect(screen.queryByText(/26 stored/)).toBeNull()
+    expect(screen.queryByText('Reconciliation report unavailable.')).toBeNull()
+
+    await act(async () => {
+      second.resolve(report({ totalCount: 27, last7DaysCount: 8 }))
+    })
+    expect(await screen.findByText(/27 stored · 8 in the last 7 days/)).toBeInTheDocument()
+    expect(document.querySelector('.dev-recon-spinner')).toBeNull()
   })
 
   it('shows an unavailable message when the report cannot be fetched', async () => {

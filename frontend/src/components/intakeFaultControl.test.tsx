@@ -1,9 +1,12 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Mock } from 'vitest'
 import { IntakeFaultControl } from './IntakeFaultControl'
 import { jsonResponse, installFetchDouble } from '../test/fetchDouble'
 import type { FetchDouble, RecordedRequest } from '../test/fetchDouble'
+
+type NotifyFn = (message: string, variant: 'info' | 'error') => void
 
 // The intake fault control renders only when the shell set its flag; tests install
 // it directly so the flag state is explicit per case.
@@ -25,10 +28,12 @@ function putCall(calls: readonly RecordedRequest[]) {
 
 describe('IntakeFaultControl', () => {
   let double: FetchDouble
+  let notify: Mock<NotifyFn>
 
   beforeEach(() => {
     window.__intakeFaultTools = true
     double = installFetchDouble()
+    notify = vi.fn<NotifyFn>()
   })
 
   afterEach(() => {
@@ -40,14 +45,14 @@ describe('IntakeFaultControl', () => {
 
   it('renders nothing until the shell enables the tools', () => {
     window.__intakeFaultTools = false
-    const { container } = render(<IntakeFaultControl onChanged={() => {}} />)
+    const { container } = render(<IntakeFaultControl onChanged={() => {}} onNotify={notify} />)
     expect(container).toBeEmptyDOMElement()
     expect(double.calls).toHaveLength(0) // no mount-time request when the flag is off
   })
 
   it('loads the switch state and offers the arm-and-submit action', async () => {
     double.queueResponse(stateResponse(0, 0))
-    render(<IntakeFaultControl onChanged={() => {}} />)
+    render(<IntakeFaultControl onChanged={() => {}} onNotify={notify} />)
 
     expect(
       await screen.findByRole('button', { name: 'Arm one failure and submit' }),
@@ -58,10 +63,27 @@ describe('IntakeFaultControl', () => {
     expect(screen.getByRole('button', { name: 'Disarm' })).toBeDisabled()
   })
 
+  it('shows an in-flight progress indicator while submitting', async () => {
+    double.queueResponse(stateResponse(0, 0))
+    render(<IntakeFaultControl onChanged={() => {}} onNotify={notify} />)
+
+    await screen.findByRole('button', { name: 'Arm one failure and submit' })
+    const pending = double.queueDeferred() // hold the arm PUT so the control stays busy
+
+    await userEvent.click(screen.getByRole('button', { name: 'Arm one failure and submit' }))
+
+    expect(
+      await screen.findByRole('progressbar', { name: 'Submitting the intake fault demo' }),
+    ).toBeInTheDocument()
+
+    pending.resolve(jsonResponse(400, {}))
+    await waitFor(() => expect(screen.queryByRole('progressbar')).toBeNull())
+  })
+
   it('arms one failure, submits, and reports a genuine 500 with no row stored', async () => {
     double.queueResponse(stateResponse(0, 0))
     const onChanged = vi.fn()
-    render(<IntakeFaultControl onChanged={onChanged} />)
+    render(<IntakeFaultControl onChanged={onChanged} onNotify={notify} />)
 
     await screen.findByRole('button', { name: 'Arm one failure and submit' })
     double.queueResponse(stateResponse(1, 0)) // PUT armCount=1
@@ -70,9 +92,12 @@ describe('IntakeFaultControl', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Arm one failure and submit' }))
 
-    const status = await screen.findByText(/Submission failed with HTTP 500 \(traceId 0HABC123\)/)
-    expect(status).toBeInTheDocument()
-    expect(status).toHaveTextContent(/No row was stored/)
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith(
+        expect.stringMatching(/Submission failed with HTTP 500 \(traceId 0HABC123\).*No row was stored/s),
+        'error',
+      ),
+    )
     expect(onChanged).toHaveBeenCalled()
 
     const post = double.calls.find((call) => call.url === '/api/inquiries' && call.method === 'POST')
@@ -82,16 +107,39 @@ describe('IntakeFaultControl', () => {
     expect(await screen.findByText(/Inert · 1 injected/)).toBeInTheDocument()
   })
 
+  it('disarms and announces the switch is inert', async () => {
+    double.queueResponse(stateResponse(2, 3))
+    render(<IntakeFaultControl onChanged={() => {}} onNotify={notify} />)
+
+    await screen.findByRole('button', { name: 'Arm one failure and submit' })
+    double.queueResponse(stateResponse(0, 3)) // PUT armCount=0
+
+    await userEvent.click(screen.getByRole('button', { name: 'Disarm' }))
+
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith(
+        expect.stringMatching(/Intake fault disarmed/),
+        'info',
+      ),
+    )
+    expect(putCall(double.calls).body).toContain('"armCount":0')
+  })
+
   it('reports a failed arm without submitting anything', async () => {
     double.queueResponse(stateResponse(0, 0))
-    render(<IntakeFaultControl onChanged={() => {}} />)
+    render(<IntakeFaultControl onChanged={() => {}} onNotify={notify} />)
 
     await screen.findByRole('button', { name: 'Arm one failure and submit' })
     double.queueResponse(jsonResponse(400, {})) // PUT rejected
 
     await userEvent.click(screen.getByRole('button', { name: 'Arm one failure and submit' }))
 
-    expect(await screen.findByText(/could not be armed; no submission was made/)).toBeInTheDocument()
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith(
+        expect.stringMatching(/could not be armed; no submission was made/),
+        'error',
+      ),
+    )
     expect(double.calls.find((call) => call.url === '/api/inquiries')).toBeUndefined()
   })
 })

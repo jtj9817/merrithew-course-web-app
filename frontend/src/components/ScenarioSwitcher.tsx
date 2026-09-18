@@ -6,28 +6,37 @@ import {
   scenarioToolsEnabled,
 } from '../lib/scenarios'
 import type { ScenarioInfo } from '../lib/scenarios'
+import { LinearProgress, Spinner } from './Progress'
 
 interface ScenarioSwitcherProps {
   /** Called after the store changes so the dashboard reloads its data. */
   onChanged: () => void
+  /** Routes the outcome to the shared triage snackbar. */
+  onNotify: (message: string, variant: 'info' | 'error') => void
 }
+
+type PendingAction = 'apply' | 'clear' | null
 
 /**
  * Dev-only control that drives the inquiry store into a known state through
  * /api/dev/scenarios, with a Clear action to reverse it. It renders nothing
- * unless the server shell set `window.__scenarioTools` — so it is absent in
+ * unless the server shell set `window.__scenarioTools`, so it is absent in
  * production and inert in the test harness (no mount-time request is made when
  * the flag is off, keeping the fetch double's queue intact).
+ *
+ * In-flight work shows an M3 linear progress bar plus a spinner in the active
+ * button; the result is announced through the shared snackbar.
  */
-export function ScenarioSwitcher({ onChanged }: ScenarioSwitcherProps) {
+export function ScenarioSwitcher({ onChanged, onNotify }: ScenarioSwitcherProps) {
   const enabled = scenarioToolsEnabled()
   const [scenarios, setScenarios] = useState<ScenarioInfo[] | null>(null)
   const [selected, setSelected] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [status, setStatus] = useState('')
+  const [pending, setPending] = useState<PendingAction>(null)
 
   const onChangedRef = useRef(onChanged)
   onChangedRef.current = onChanged
+  const onNotifyRef = useRef(onNotify)
+  onNotifyRef.current = onNotify
 
   useEffect(() => {
     if (!enabled) {
@@ -48,33 +57,39 @@ export function ScenarioSwitcher({ onChanged }: ScenarioSwitcherProps) {
     return null
   }
 
-  const run = async (action: () => Promise<string | null>) => {
-    setBusy(true)
-    setStatus('Working…')
-    const message = await action()
-    if (message) {
-      setStatus(message)
+  const busy = pending !== null
+
+  const apply = async () => {
+    setPending('apply')
+    const result = await applyScenario(selected)
+    if (result) {
       onChangedRef.current()
+      onNotifyRef.current(`Loaded ${result.scenario}: ${result.totalCount} inquiries.`, 'info')
     } else {
-      setStatus('Request failed — is scenario seeding still enabled?')
+      onNotifyRef.current('Could not load the scenario. Is scenario seeding still enabled?', 'error')
     }
-    setBusy(false)
+    setPending(null)
   }
 
-  const apply = () =>
-    run(async () => {
-      const result = await applyScenario(selected)
-      return result ? `Loaded ${result.scenario} — ${result.totalCount} inquiries.` : null
-    })
-
-  const clear = () =>
-    run(async () => {
-      const removed = await clearScenarios()
-      return removed === null ? null : `Cleared ${removed} inquiries.`
-    })
+  const clear = async () => {
+    setPending('clear')
+    const removed = await clearScenarios()
+    if (removed === null) {
+      onNotifyRef.current('Could not clear the store. Is scenario seeding still enabled?', 'error')
+    } else {
+      onChangedRef.current()
+      onNotifyRef.current(`Cleared ${removed} ${removed === 1 ? 'inquiry' : 'inquiries'}.`, 'info')
+    }
+    setPending(null)
+  }
 
   return (
-    <aside className="dev-scenarios" aria-label="Developer scenario tools">
+    <aside className="dev-scenarios" aria-label="Developer scenario tools" aria-busy={busy}>
+      {busy && (
+        <div className="dev-tool-progress">
+          <LinearProgress label={pending === 'apply' ? 'Loading scenario' : 'Clearing inquiries'} />
+        </div>
+      )}
       <span className="dev-scenarios-tag">DEV</span>
       <label className="dev-scenarios-field">
         <span>Simulate scenario</span>
@@ -90,15 +105,14 @@ export function ScenarioSwitcher({ onChanged }: ScenarioSwitcherProps) {
           ))}
         </select>
       </label>
-      <button type="button" onClick={apply} disabled={busy}>
+      <button type="button" onClick={() => void apply()} disabled={busy}>
+        {pending === 'apply' && <Spinner size={16} />}
         Apply
       </button>
-      <button type="button" onClick={clear} disabled={busy}>
+      <button type="button" onClick={() => void clear()} disabled={busy}>
+        {pending === 'clear' && <Spinner size={16} />}
         Clear
       </button>
-      <span className="dev-scenarios-status" role="status" aria-live="polite">
-        {status}
-      </span>
     </aside>
   )
 }

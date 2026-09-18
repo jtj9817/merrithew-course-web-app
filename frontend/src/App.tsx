@@ -108,7 +108,7 @@ export default function App() {
     setPhase(next)
   }, [])
 
-  /** C7: every panel close — user-initiated or programmatic — returns focus to its opener. */
+  /** C7: every panel close, user-initiated or programmatic, returns focus to its opener. */
   const focusDetailOpener = useCallback((state: DetailState) => {
     if (state.kind !== 'closed') {
       if (state.opener.isConnected) {
@@ -132,6 +132,17 @@ export default function App() {
   const refreshList = useCallback((reason: RefreshReason) => {
     refreshReasonRef.current = reason
     setRefreshKey((key) => key + 1)
+  }, [])
+
+  // Dev-tool outcomes share the triage snackbar (C7): an info result routes to
+  // the polite region, a failure to the assertive one, and both raise a toast.
+  const notify = useCallback((message: string, variant: ToastNotification['variant']) => {
+    if (variant === 'error') {
+      setAssertive(message)
+    } else {
+      setPolite(message)
+    }
+    setToast({ id: Date.now(), variant })
   }, [])
 
   // Dev-only data changes return to a clean view and always refetch, even when
@@ -331,9 +342,9 @@ export default function App() {
         inert={isDetailOpen ? true : undefined}
       >
         <div className="dev-tools">
-          <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} />
-          <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} />
-          <IntakeFaultControl onChanged={handleDevelopmentDataChanged} />
+          <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} onNotify={notify} />
+          <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} onNotify={notify} />
+          <IntakeFaultControl onChanged={handleDevelopmentDataChanged} onNotify={notify} />
           <ReconciliationPanel reloadToken={refreshKey} />
         </div>
 

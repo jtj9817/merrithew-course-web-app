@@ -188,6 +188,125 @@ export async function createCrmDemoInquiry(): Promise<number | null> {
   }
 }
 
+/** One reconstructed server-log line for the CRM sync trail. */
+export interface CrmSyncLogEntry {
+  /** The exact message the server logger emitted (verbatim template). */
+  message: string
+  /** Log level, matching the server's LoggerMessage severity. */
+  level: 'info' | 'warning'
+  /** The server EventId this line corresponds to (10-14). */
+  eventId: number
+}
+
+/**
+ * Reconstructs the CRM sync attempt trail from the recorded, non-PII result.
+ * The simulation is deterministic (see CrmSimulationRuntime.ExecuteAttemptAsync),
+ * so mode + outcome + attempt count fully determine the per-attempt lines: the
+ * retried attempts are transient HttpRequestExceptions (or per-attempt timeouts
+ * in Timeout mode), and the terminal line carries InvalidOperationException for a
+ * permanent rejection or HttpRequestException for exhausted transients. Each line
+ * mirrors a server LoggerMessage template (EventId 10-14) so the readout matches
+ * the application log; the log itself remains the authoritative record.
+ */
+export function buildCrmSyncLog(result: CrmSyncResult): CrmSyncLogEntry[] {
+  const { inquiryId: id, mode, outcome, attempts } = result
+  const terminalErrorType =
+    mode === 'PermanentFailure' ? 'InvalidOperationException' : 'HttpRequestException'
+  const entries: CrmSyncLogEntry[] = []
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    entries.push({
+      eventId: 10,
+      level: 'info',
+      message: `CRM sync attempt ${attempt} for inquiry ${id} started`,
+    })
+
+    if (attempt < attempts) {
+      // Only transient failures and timeouts are retried, so every non-terminal
+      // attempt is one of those.
+      entries.push(
+        mode === 'Timeout'
+          ? {
+              eventId: 11,
+              level: 'info',
+              message: `CRM sync attempt ${attempt} for inquiry ${id} ended with outcome timedOut`,
+            }
+          : {
+              eventId: 12,
+              level: 'warning',
+              message: `CRM sync attempt ${attempt} for inquiry ${id} ended with outcome failed (HttpRequestException)`,
+            },
+      )
+      continue
+    }
+
+    // Terminal attempt: its outcome is the sync outcome.
+    switch (outcome) {
+      case 'Success':
+        entries.push({
+          eventId: 11,
+          level: 'info',
+          message: `CRM sync attempt ${attempt} for inquiry ${id} ended with outcome success`,
+        })
+        break
+      case 'Failed':
+        entries.push({
+          eventId: 12,
+          level: 'warning',
+          message: `CRM sync attempt ${attempt} for inquiry ${id} ended with outcome failed (${terminalErrorType})`,
+        })
+        break
+      case 'TimedOut':
+        entries.push({
+          eventId: 11,
+          level: 'info',
+          message: `CRM sync attempt ${attempt} for inquiry ${id} ended with outcome timedOut`,
+        })
+        break
+      case 'Cancelled':
+        entries.push({
+          eventId: 11,
+          level: 'info',
+          message: `CRM sync attempt ${attempt} for inquiry ${id} ended with outcome cancelled`,
+        })
+        break
+    }
+  }
+
+  switch (outcome) {
+    case 'Success':
+      entries.push({
+        eventId: 13,
+        level: 'info',
+        message: `CRM sync for inquiry ${id} ended with outcome success after ${attempts} attempt(s)`,
+      })
+      break
+    case 'Failed':
+      entries.push({
+        eventId: 14,
+        level: 'warning',
+        message: `CRM sync for inquiry ${id} ended with outcome failed (${terminalErrorType}) after ${attempts} attempt(s)`,
+      })
+      break
+    case 'TimedOut':
+      entries.push({
+        eventId: 13,
+        level: 'info',
+        message: `CRM sync for inquiry ${id} ended with outcome timedOut after ${attempts} attempt(s)`,
+      })
+      break
+    case 'Cancelled':
+      entries.push({
+        eventId: 13,
+        level: 'info',
+        message: `CRM sync for inquiry ${id} ended with outcome cancelled after ${attempts} attempt(s)`,
+      })
+      break
+  }
+
+  return entries
+}
+
 /** Reads the safe outcome of one completed sync; null when unknown or unavailable. */
 export async function fetchCrmSyncResult(inquiryId: number): Promise<CrmSyncResult | null> {
   try {

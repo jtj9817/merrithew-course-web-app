@@ -1,14 +1,14 @@
 /* ── Merrithew Brand Identity & Material Design 3 Design Tokens ───────────
    Brand Source Colors:
-   - Primary:   #AC2724 (Brick Red — primary brand color)
-   - Secondary: #583E24 (Dark Brown — secondary accent)
-   - Tertiary:  #3E4524 (Dark Olive — tertiary accent)
+   - Primary:   #AC2724 (Brick Red, primary brand color)
+   - Secondary: #583E24 (Dark Brown, secondary accent)
+   - Tertiary:  #3E4524 (Dark Olive, tertiary accent)
    - Neutrals:  #E8E8E8 / #C1C6C9 (warm-gray surface & container neutrals)
 
    Material Design 3 Token Hierarchy:
    All color roles, typography, shape, elevation, motion, and state layers
    are declared as CSS custom properties on :root. Component rules consume
-   these tokens exclusively — no ad-hoc hex values, px font sizes, or raw shadows.
+   these tokens exclusively; no ad-hoc hex values, px font sizes, or raw shadows.
    Every color combination has been computationally verified for WCAG 2.1 AA
    contrast (normal text ≥ 4.5:1, large text ≥ 3:1, non-text UI ≥ 3:1).
 ─────────────────────────────────────────────────────────────────────────── */
@@ -179,7 +179,7 @@
   --md-sys-shape-corner-extra-large: 28px;
   --md-sys-shape-corner-full: 9999px;
 
-  /* ── M3 Elevation Tokens (Shadow Levels 1–3) ───────────────────────────── */
+  /* ── M3 Elevation Tokens (Shadow Levels 1-3) ───────────────────────────── */
   --md-sys-elevation-0: none;
   --md-sys-elevation-1: 0px 1px 3px 1px rgba(37, 32, 27, 0.12), 0px 1px 2px 0px rgba(37, 32, 27, 0.20);
   --md-sys-elevation-2: 0px 2px 6px 2px rgba(37, 32, 27, 0.12), 0px 1px 2px 0px rgba(37, 32, 27, 0.20);
@@ -1470,6 +1470,7 @@ noscript a {
 }
 
 .dev-scenarios {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1515,6 +1516,10 @@ noscript a {
 }
 
 .dev-scenarios button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 36px;
   padding: 0 var(--space-3);
   border: 1px solid var(--md-sys-color-outline);
@@ -1535,13 +1540,23 @@ noscript a {
   cursor: default;
 }
 
-.dev-scenarios-status {
-  margin-left: auto;
-  color: var(--md-sys-color-on-surface-variant);
-  font-variant-numeric: tabular-nums;
+/* Indeterminate progress that sits flush along a dev-tool panel's top edge
+   while it works, clipped to the panel's rounded top corners. */
+.dev-tool-progress {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  overflow: hidden;
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+}
+
+.dev-tool-progress .linear-progress-track {
+  border-radius: 0;
 }
 
 .dev-crm {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(260px, 1fr) repeat(3, auto);
   align-items: end;
@@ -1611,6 +1626,10 @@ noscript a {
 }
 
 .dev-crm-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 36px;
   padding: 0 var(--space-3);
   border: 1px solid var(--md-sys-color-outline);
@@ -1644,13 +1663,6 @@ noscript a {
 .dev-crm-actions button:disabled {
   cursor: default;
   opacity: 0.5;
-}
-
-.dev-tools-status {
-  grid-column: 1 / -1;
-  min-height: 20px;
-  color: var(--md-sys-color-on-surface-variant);
-  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 960px) {
@@ -1690,6 +1702,7 @@ noscript a {
 }
 
 .dev-recon {
+  position: relative;
   display: grid;
   gap: var(--space-2);
   padding: var(--space-3);
@@ -1713,9 +1726,16 @@ noscript a {
 }
 
 .dev-recon-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   margin-left: auto;
   color: var(--md-sys-color-on-surface-variant);
   font-variant-numeric: tabular-nums;
+}
+
+.dev-recon-spinner {
+  color: var(--md-sys-color-primary);
 }
 
 .dev-recon-counts {
@@ -1750,6 +1770,265 @@ noscript a {
 .dev-recon-duplicates {
   margin: 0;
   color: var(--md-sys-color-on-surface);
+}
+
+/* ── Material Design 3 Progress Indicators ──────────────────────────────── */
+
+/* Circular indeterminate spinner (M3). Inherits currentColor so it reads on
+   both filled and outlined buttons; decorative by default (a live region
+   announces the action separately). */
+.spinner {
+  display: inline-block;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2.5px solid color-mix(in srgb, currentColor 26%, transparent);
+  border-block-start-color: currentColor;
+  animation: spinner-rotate 900ms linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Linear indeterminate progress (M3): a sliding indicator over a quiet track,
+   sitting flush at the top edge of a dev-tool panel while it works. */
+.linear-progress {
+  inline-size: 100%;
+}
+
+.linear-progress-track {
+  position: relative;
+  overflow: hidden;
+  block-size: 4px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.linear-progress-indicator {
+  position: absolute;
+  inset-block: 0;
+  inline-size: 40%;
+  border-radius: inherit;
+  background-color: var(--md-sys-color-primary);
+  animation: linear-progress-slide 1.15s var(--md-sys-motion-easing-standard) infinite;
+}
+
+@keyframes linear-progress-slide {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+/* Reduced motion: the global rule freezes the animations to their final frame,
+   which would hide the sliding indicator. Restore a legible static state so the
+   "busy" signal survives; meaning is still carried by the live-region text. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    border-color: currentColor;
+    opacity: 0.55;
+  }
+
+  .linear-progress-indicator {
+    inline-size: 100%;
+    transform: none;
+    opacity: 0.5;
+  }
+}
+
+/* ── Dev CRM sync log modal (M3 dialog) ─────────────────────────────────── */
+
+/* Low-emphasis M3 text button that reveals the log; overrides the shared
+   filled/outlined dev-action button styling (higher specificity wins). */
+.dev-crm-actions .dev-crm-log {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--md-sys-color-primary);
+}
+
+.dev-crm-actions .dev-crm-log:hover:not(:disabled) {
+  border-color: transparent;
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  color: var(--md-sys-color-primary);
+}
+
+.dev-log-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background-color: var(--md-sys-color-scrim);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: scrim-enter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) both;
+}
+
+.dev-log-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - 48px);
+  padding: var(--space-6);
+  background-color: var(--md-sys-color-surface-container-high);
+  border-radius: var(--md-sys-shape-corner-extra-large);
+  box-shadow: var(--md-sys-elevation-3);
+  animation: modal-enter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) both;
+}
+
+.dev-log-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.dev-log-eyebrow {
+  margin: 0 0 2px;
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-label-small-size);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-primary);
+}
+
+.dev-log-title {
+  margin: 0;
+  font-size: var(--md-sys-typescale-headline-small-size);
+  line-height: var(--md-sys-typescale-headline-small-line-height);
+  font-weight: var(--md-sys-typescale-headline-small-weight);
+  color: var(--md-sys-color-on-surface);
+}
+
+.dev-log-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  flex-shrink: 0;
+}
+
+.dev-log-close:hover {
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
+}
+
+.dev-log-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--md-sys-color-surface-container-lowest);
+}
+
+.dev-log-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dev-log-summary-item dt {
+  font-size: var(--md-sys-typescale-label-small-size);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.dev-log-summary-item dd {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-body-small-size);
+  color: var(--md-sys-color-on-surface);
+}
+
+.dev-log-lines {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--space-2);
+  list-style: none;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--md-sys-color-surface-container-lowest);
+}
+
+.dev-log-line {
+  display: grid;
+  grid-template-columns: 3.25rem 2rem 1fr;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 4px var(--space-2);
+  border-inline-start: 3px solid transparent;
+}
+
+.dev-log-line + .dev-log-line {
+  border-block-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.dev-log-line--info {
+  border-inline-start-color: var(--md-sys-color-outline-variant);
+}
+
+.dev-log-line--warning {
+  border-inline-start-color: var(--md-sys-color-error);
+  background-color: var(--md-sys-color-error-container);
+}
+
+.dev-log-level {
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-label-small-size);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.dev-log-line--warning .dev-log-level {
+  color: var(--md-sys-color-error);
+}
+
+.dev-log-event {
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-label-small-size);
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.7;
+}
+
+.dev-log-message {
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.dev-log-line--warning .dev-log-message {
+  color: var(--md-sys-color-on-error-container);
+}
+
+.dev-log-note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* ── Material Design 3 Switch & Toggle Component ────────────────────────── */

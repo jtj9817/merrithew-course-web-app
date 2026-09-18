@@ -1470,6 +1470,7 @@ noscript a {
 }
 
 .dev-scenarios {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1515,6 +1516,10 @@ noscript a {
 }
 
 .dev-scenarios button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 36px;
   padding: 0 var(--space-3);
   border: 1px solid var(--md-sys-color-outline);
@@ -1535,13 +1540,23 @@ noscript a {
   cursor: default;
 }
 
-.dev-scenarios-status {
-  margin-left: auto;
-  color: var(--md-sys-color-on-surface-variant);
-  font-variant-numeric: tabular-nums;
+/* Indeterminate progress that sits flush along a dev-tool panel's top edge
+   while it works, clipped to the panel's rounded top corners. */
+.dev-tool-progress {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  overflow: hidden;
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+}
+
+.dev-tool-progress .linear-progress-track {
+  border-radius: 0;
 }
 
 .dev-crm {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(260px, 1fr) repeat(3, auto);
   align-items: end;
@@ -1611,6 +1626,10 @@ noscript a {
 }
 
 .dev-crm-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 36px;
   padding: 0 var(--space-3);
   border: 1px solid var(--md-sys-color-outline);
@@ -1644,13 +1663,6 @@ noscript a {
 .dev-crm-actions button:disabled {
   cursor: default;
   opacity: 0.5;
-}
-
-.dev-tools-status {
-  grid-column: 1 / -1;
-  min-height: 20px;
-  color: var(--md-sys-color-on-surface-variant);
-  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 960px) {
@@ -1690,6 +1702,7 @@ noscript a {
 }
 
 .dev-recon {
+  position: relative;
   display: grid;
   gap: var(--space-2);
   padding: var(--space-3);
@@ -1713,9 +1726,16 @@ noscript a {
 }
 
 .dev-recon-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   margin-left: auto;
   color: var(--md-sys-color-on-surface-variant);
   font-variant-numeric: tabular-nums;
+}
+
+.dev-recon-spinner {
+  color: var(--md-sys-color-primary);
 }
 
 .dev-recon-counts {

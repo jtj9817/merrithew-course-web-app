@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchReconciliation, reconciliationToolsEnabled } from '../lib/reconciliation'
 import type { ReconciliationReport } from '../lib/reconciliation'
+import { Spinner } from './Progress'
 
 interface ReconciliationPanelProps {
   /** Refetches whenever this token changes (e.g. after a scenario or status change). */
@@ -18,12 +19,14 @@ export function ReconciliationPanel({ reloadToken }: ReconciliationPanelProps) {
   const enabled = reconciliationToolsEnabled()
   const [report, setReport] = useState<ReconciliationReport | null>(null)
   const [status, setStatus] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!enabled) {
       return
     }
     const controller = new AbortController()
+    setLoading(true)
     void (async () => {
       const loaded = await fetchReconciliation(controller.signal)
       if (loaded) {
@@ -32,8 +35,11 @@ export function ReconciliationPanel({ reloadToken }: ReconciliationPanelProps) {
       } else {
         setStatus('Reconciliation report unavailable.')
       }
+      setLoading(false)
     })()
-    return () => controller.abort()
+    return () => {
+      controller.abort()
+    }
   }, [enabled, reloadToken])
 
   if (!enabled) {
@@ -49,6 +55,7 @@ export function ReconciliationPanel({ reloadToken }: ReconciliationPanelProps) {
           {report
             ? `${report.totalCount} stored · ${report.last7DaysCount} in the last 7 days`
             : status || 'Loading…'}
+          {loading && <Spinner size={14} className="dev-recon-spinner" />}
         </span>
       </div>
 

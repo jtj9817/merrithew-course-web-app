@@ -134,6 +134,17 @@ export default function App() {
     setRefreshKey((key) => key + 1)
   }, [])
 
+  // Dev-tool outcomes share the triage snackbar (C7): an info result routes to
+  // the polite region, a failure to the assertive one, and both raise a toast.
+  const notify = useCallback((message: string, variant: ToastNotification['variant']) => {
+    if (variant === 'error') {
+      setAssertive(message)
+    } else {
+      setPolite(message)
+    }
+    setToast({ id: Date.now(), variant })
+  }, [])
+
   // Dev-only data changes return to a clean view and always refetch, even when
   // the queue already shows the default filter and sort.
   const handleDevelopmentDataChanged = useCallback(() => {
@@ -331,9 +342,9 @@ export default function App() {
         inert={isDetailOpen ? true : undefined}
       >
         <div className="dev-tools">
-          <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} />
-          <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} />
-          <IntakeFaultControl onChanged={handleDevelopmentDataChanged} />
+          <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} onNotify={notify} />
+          <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} onNotify={notify} />
+          <IntakeFaultControl onChanged={handleDevelopmentDataChanged} onNotify={notify} />
           <ReconciliationPanel reloadToken={refreshKey} />
         </div>
 

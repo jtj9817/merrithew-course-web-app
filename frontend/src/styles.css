@@ -5,6 +5,8 @@
    - Tertiary:  #3E4524 (Dark Olive, tertiary accent)
    - Neutrals:  #E9EBDD / #D1D5C0 (olive-washed surface & container neutrals,
                 re-hued from the #3E4524 tertiary for the "olive containers" theme)
+   - Colorblind Mode re-hues the whole olive family (tertiary accent, surface
+                ladder, outlines) to soft blue; see the scheme block below :root.
 
    Material Design 3 Token Hierarchy:
    All color roles, typography, shape, elevation, motion, and state layers
@@ -223,6 +225,37 @@
   --space-8: 2rem;     /* 32px */
   --space-10: 2.5rem;  /* 40px */
   --space-12: 3rem;    /* 48px */
+}
+
+/* ── Colorblind Mode Scheme: Olive → Soft Blue ─────────────────────────────
+   Colorblind Mode re-hues the olive family (tertiary accent, the whole
+   surface ladder, outlines) into the soft blue family its CVD-safe chrome
+   already carries (cobalt #2C4A6E, New status badge), so no olive hue
+   survives in the scheme. Each token re-hues its olive original to OKLCH
+   hue 253 with chroma scaled 1.25x while holding WCAG relative luminance
+   constant (≤0.1% drift), so every verified pairing carries over unchanged:
+   body ink 10.8-15.1:1, secondary ink 5.2-7.2:1, primary accent ≥4.56:1,
+   outline as a non-text boundary ≥4.28:1. Standard mode keeps olive. */
+
+:root[data-colorblind="true"] {
+  /* ── M3 Color Roles: Tertiary (Soft Blue) ──────────────────────────────── */
+  --md-sys-color-tertiary: #294364;
+  --md-sys-color-on-tertiary: #F3F8FE;
+  --md-sys-color-tertiary-container: #C6D9EF;
+  --md-sys-color-on-tertiary-container: #0C1E32;
+
+  /* ── M3 Color Roles: Surface & Surface Containers (Soft Blue) ──────────── */
+  --md-sys-color-surface: #DFEBF9;
+  --md-sys-color-surface-variant: #CDDFF5;
+  --md-sys-color-surface-container-lowest: #F2F8FF;
+  --md-sys-color-surface-container-low: #E7F2FF;
+  --md-sys-color-surface-container: #D7E3F1;
+  --md-sys-color-surface-container-high: #C9DBF1;
+  --md-sys-color-surface-container-highest: #C1D5EC;
+
+  /* ── M3 Color Roles: Outline & Borders (Soft Blue) ─────────────────────── */
+  --md-sys-color-outline: #516072;
+  --md-sys-color-outline-variant: #BACDE3;
 }
 
 /* ── Reset & Global Baseline ─────────────────────────────────────────────── */
@@ -1012,6 +1045,14 @@ noscript a {
   outline: 3px solid #2C4A6E !important;
   outline-offset: 3px !important;
   box-shadow: 0 0 0 5px rgba(44, 74, 110, 0.30) !important;
+}
+
+/* Colorblind Mode Chevron Re-Hue: the chevron stroke is baked into the select
+   data-URI (it cannot follow --md-sys-color-outline), so re-declare the
+   background image with the soft blue outline #516072. */
+[data-colorblind="true"] .toolbar select,
+[data-colorblind="true"] .status-cell select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23516072' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 /* ── Loading, Empty, & Error States ──────────────────────────────────────── */

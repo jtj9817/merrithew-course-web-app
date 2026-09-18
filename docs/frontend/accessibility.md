@@ -132,9 +132,19 @@ Visual updates occurring without page reloads are invisible to screen readers un
   - `Pending`: Dotted rectangular border + Clock icon (⏳)
   - `Registered`: Double solid border + Checkmark icon (✓)
   - `Closed`: Thin border with reduced contrast + Slash icon (⊘)
+- **CVD-Safe Canvas Re-Hue**: Activating Colorblind Mode also re-hues the olive
+  family (`--md-sys-color-tertiary*`, the whole surface ladder, the outlines)
+  to soft blue under `:root[data-colorblind="true"]` in `frontend/src/styles.css`,
+  so the canvas joins the cobalt chrome and the `New` badge in one CVD-safe blue
+  family. Each token keeps its olive original's WCAG relative luminance (drift
+  ≤ 0.1%) while moving to OKLCH hue 253 with chroma scaled 1.25x, so every
+  verified contrast pairing carries over unchanged: body ink 13.4:1, secondary
+  ink 6.4:1, outline as a non-text boundary ≥ 4.28:1. The two select-chevron
+  data-URIs re-declare their baked-in stroke with the soft blue outline.
+  Standard Mode keeps the olive palette.
 
 ### 3.4 Responsive Reflow, Contrast & Reduced Motion (WCAG 1.4.3, 1.4.4, 1.4.10, 2.3.3)
-- **Contrast Ratios**: All typography meets or exceeds WCAG AA 4.5:1 contrast against surface backgrounds (e.g., dark body text on the `#E8E8E8` light neutral surface achieves > 11:1).
+- **Contrast Ratios**: All typography meets or exceeds WCAG AA 4.5:1 contrast against surface backgrounds (e.g., dark body text achieves 13.4:1 on the olive `#E9EBDD` surface, and 13.4:1 on the soft blue `#DFEBF9` surface Colorblind Mode swaps in).
 - **Responsive Reflow down to 375px**: Layouts rely on relative units (`rem`, `%`, flexbox, CSS grid), supporting 200% zoom and 375px mobile viewports without horizontal scrolling or content clipping.
 - **Reduced Motion**: System preferences (`@media (prefers-reduced-motion: reduce)`) suppress non-essential animations and instant-skip transitions.
 

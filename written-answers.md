@@ -165,8 +165,9 @@ outline in [`docs/frontend/accessibility.md`](docs/frontend/accessibility.md)):
    politely (`role="status"`) for saves, filter, and pagination updates with
    counts, and assertively (`role="alert"`) for errors and missing records. A
    failed status mutation marks the row's `<select>` with `aria-invalid`.
-   Workflow badges always show the status text, and Colorblind Mode adds
-   distinct shapes and icons per status.
+   Workflow badges always show the status text; Colorblind Mode layers on
+   per-status shapes and icons and re-hues the olive canvas to a CVD-safe soft
+   blue, keeping every contrast ratio unchanged.
 
 ---
 

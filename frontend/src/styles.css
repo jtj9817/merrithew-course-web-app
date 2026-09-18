@@ -3,7 +3,8 @@
    - Primary:   #AC2724 (Brick Red, primary brand color)
    - Secondary: #583E24 (Dark Brown, secondary accent)
    - Tertiary:  #3E4524 (Dark Olive, tertiary accent)
-   - Neutrals:  #E8E8E8 / #C1C6C9 (warm-gray surface & container neutrals)
+   - Neutrals:  #E9EBDD / #D1D5C0 (olive-washed surface & container neutrals,
+                re-hued from the #3E4524 tertiary for the "olive containers" theme)
 
    Material Design 3 Token Hierarchy:
    All color roles, typography, shape, elevation, motion, and state layers
@@ -40,23 +41,23 @@
   --md-sys-color-on-tertiary-container: #1B1F0B;
 
   /* ── M3 Color Roles: Surface & Surface Containers ──────────────────────── */
-  --md-sys-color-surface: #E8E8E8;
+  --md-sys-color-surface: #E9EBDD;
   --md-sys-color-on-surface: #25201B;
-  --md-sys-color-surface-variant: #D9DDDF;
+  --md-sys-color-surface-variant: #DCDFCC;
   --md-sys-color-on-surface-variant: #5B5148;
-  --md-sys-color-surface-container-lowest: #F6F7F7;
-  --md-sys-color-surface-container-low: #EEF0F0;
-  --md-sys-color-surface-container: #DEDFE0;
-  --md-sys-color-surface-container-high: #D4D7DA;
-  --md-sys-color-surface-container-highest: #C1C6C9;
+  --md-sys-color-surface-container-lowest: #F7F8EF;
+  --md-sys-color-surface-container-low: #F0F2E6;
+  --md-sys-color-surface-container: #E1E3D5;
+  --md-sys-color-surface-container-high: #D8DBC8;
+  --md-sys-color-surface-container-highest: #D1D5C0;
 
   /* ── M3 Color Roles: Inverse Surface ───────────────────────────────────── */
   --md-sys-color-inverse-surface: #322A22;
   --md-sys-color-inverse-on-surface: #F4EFE8;
 
   /* ── M3 Color Roles: Outline & Borders ─────────────────────────────────── */
-  --md-sys-color-outline: #5C6467;
-  --md-sys-color-outline-variant: #C6CCCF;
+  --md-sys-color-outline: #5A6152;
+  --md-sys-color-outline-variant: #C9CDBA;
 
   /* ── M3 Color Roles: Error ─────────────────────────────────────────────── */
   --md-sys-color-error: #8A1C16;
@@ -505,7 +506,7 @@ noscript a {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C6467' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6152' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   background-size: 16px 16px;
@@ -879,7 +880,7 @@ noscript a {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C6467' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6152' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 16px 16px;

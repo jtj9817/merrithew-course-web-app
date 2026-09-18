@@ -134,7 +134,6 @@ export function CrmSimulationControl({ onInquiryCreated, onNotify }: CrmSimulati
         </div>
       )}
       <div className="dev-crm-heading">
-        <span className="dev-tools-tag">DEV</span>
         <div>
           <strong>CRM delivery</strong>
           <p>{selectedMode?.description}</p>

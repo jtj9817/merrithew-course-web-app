@@ -117,7 +117,6 @@ export function IntakeFaultControl({ onChanged, onNotify }: IntakeFaultControlPr
         </div>
       )}
       <div className="dev-crm-heading">
-        <span className="dev-tools-tag">DEV</span>
         <div>
           <strong>Intake fault</strong>
           <p>

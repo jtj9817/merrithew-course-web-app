@@ -57,7 +57,6 @@ export function ReconciliationPanel({ reloadToken }: ReconciliationPanelProps) {
   return (
     <aside className="dev-recon" aria-label="Developer reconciliation report">
       <div className="dev-recon-heading">
-        <span className="dev-tools-tag">DEV</span>
         <strong>Reconciliation</strong>
         <span className="dev-recon-summary" role="status" aria-live="polite">
           {report

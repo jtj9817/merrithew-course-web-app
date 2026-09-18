@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { ColorblindToggle } from './components/ColorblindToggle'
 import { CrmSimulationControl } from './components/CrmSimulationControl'
 import { DetailPanel } from './components/DetailPanel'
+import { DevToolsZone } from './components/DevToolsZone'
 import { FilteredStateIndicator } from './components/FilteredStateIndicator'
 import { InquiryTable } from './components/InquiryTable'
 import { IntakeFaultControl } from './components/IntakeFaultControl'
@@ -341,12 +342,12 @@ export default function App() {
         className="island-content"
         inert={isDetailOpen ? true : undefined}
       >
-        <div className="dev-tools">
+        <DevToolsZone>
           <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} onNotify={notify} />
           <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} onNotify={notify} />
           <IntakeFaultControl onChanged={handleDevelopmentDataChanged} onNotify={notify} />
           <ReconciliationPanel reloadToken={refreshKey} />
-        </div>
+        </DevToolsZone>
 
         <Toolbar
           filter={request.filter}

@@ -1458,7 +1458,7 @@ noscript a {
   }
 }
 
-/* ── Dev-Only Tools (Scenario Switcher & CRM Simulator) ───────────────────── */
+/* ── Dev-Only Scenario Zone ────────────────────────────────────────────────── */
 
 .dev-tools:empty {
   display: none;
@@ -1466,8 +1466,36 @@ noscript a {
 
 .dev-tools {
   display: grid;
-  gap: var(--space-2);
+  gap: 0;
   margin-bottom: var(--space-4);
+  border: 1px dashed var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--md-sys-color-surface-container);
+}
+
+.dev-tools-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.dev-tools-lede {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+}
+
+/* Panels are members of the zone, not cards: no borders, fills, or radii of
+   their own. Hairlines between rows replace the four separate dashed boxes. */
+.dev-tools > aside {
+  padding: var(--space-3) var(--space-4);
+}
+
+.dev-tools > aside + aside {
+  border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .dev-scenarios {
@@ -1476,20 +1504,10 @@ noscript a {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-4);
-  padding: var(--space-2) var(--space-3);
-  border: 1px dashed var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-small);
-  background-color: var(--md-sys-color-surface-container);
   color: var(--md-sys-color-on-surface-variant);
   font-size: var(--md-sys-typescale-body-small-size);
 }
 
-.dev-tools .dev-scenarios {
-  margin-bottom: 0;
-}
-
-.dev-scenarios-tag,
 .dev-tools-tag {
   font-family: var(--font-family-mono);
   font-size: var(--md-sys-typescale-label-small-size);
@@ -1541,15 +1559,13 @@ noscript a {
   cursor: default;
 }
 
-/* Indeterminate progress that sits flush along a dev-tool panel's top edge
-   while it works, clipped to the panel's rounded top corners. */
+/* Indeterminate progress that sits flush along a dev-tool row's top edge
+   while it works. */
 .dev-tool-progress {
   position: absolute;
   inset-inline: 0;
   inset-block-start: 0;
   overflow: hidden;
-  border-start-start-radius: inherit;
-  border-start-end-radius: inherit;
 }
 
 .dev-tool-progress .linear-progress-track {
@@ -1562,10 +1578,6 @@ noscript a {
   grid-template-columns: minmax(260px, 1fr) repeat(3, auto);
   align-items: end;
   gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px dashed var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-small);
-  background-color: var(--md-sys-color-surface-container);
   color: var(--md-sys-color-on-surface-variant);
   font-size: var(--md-sys-typescale-body-small-size);
 }
@@ -1706,10 +1718,6 @@ noscript a {
   position: relative;
   display: grid;
   gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px dashed var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-small);
-  background-color: var(--md-sys-color-surface-container);
   color: var(--md-sys-color-on-surface-variant);
   font-size: var(--md-sys-typescale-body-small-size);
 }

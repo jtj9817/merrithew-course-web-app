@@ -90,7 +90,6 @@ export function ScenarioSwitcher({ onChanged, onNotify }: ScenarioSwitcherProps)
           <LinearProgress label={pending === 'apply' ? 'Loading scenario' : 'Clearing inquiries'} />
         </div>
       )}
-      <span className="dev-scenarios-tag">DEV</span>
       <label className="dev-scenarios-field">
         <span>Simulate scenario</span>
         <select

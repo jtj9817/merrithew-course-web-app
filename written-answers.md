@@ -144,7 +144,7 @@ Three considerations applied across the Razor host and React island
    a polite region (`role="status"`) for save confirmations, filter updates, and pagination transitions (announcing on-page count e.g. *"Page 2 (of 3) loaded, showing 20 matching inquiries"* alongside `aria-current="page"` on the active page indicator);
    and an assertive region (`role="alert"`) for mutation errors and missing records. Failed status mutations associate inline `aria-invalid="true"`
    on the row's `<select>`. Workflow status is never communicated by color alone: badges display the text **name**, supplemented in Colorblind Mode
-   by distinct shape and icon cues (solid pill + star, dashed + chat, dotted + clock, double border + check, slash) and an on-screen legend guide.
+   by distinct shape and icon cues (solid pill + star, dashed + chat, dotted + clock, double border + check, slash).
 ---
 
 ## Code quality

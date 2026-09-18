@@ -6,10 +6,25 @@ import { jsonResponse } from '../test/fetchDouble'
 import { envelope, fixInq1, fixInq2 } from '../test/fixtures'
 import { renderIsland, uninstallActiveIsland } from '../test/islandTestKit'
 
+let shellAppbar: HTMLElement | null = null
+
+/** Mounts the Razor shell appbar badge, which hosts the colorblind toggle portal target. */
+function mountShellAppbar(): void {
+  const badge = document.createElement('div')
+  badge.className = 'shell-appbar-badge'
+  const target = document.createElement('div')
+  target.id = 'shell-appbar-colorblind'
+  badge.appendChild(target)
+  document.body.appendChild(badge)
+  shellAppbar = badge
+}
+
 afterEach(() => {
   uninstallActiveIsland()
   window.localStorage.clear()
   document.documentElement.removeAttribute('data-colorblind')
+  shellAppbar?.remove()
+  shellAppbar = null
 })
 
 const user = userEvent.setup()
@@ -18,6 +33,7 @@ describe('Material Design 3 Colorblind Mode', () => {
   beforeEach(() => {
     window.localStorage.clear()
     document.documentElement.removeAttribute('data-colorblind')
+    mountShellAppbar()
   })
 
   it('initializes in disabled state by default with proper M3 switch semantics', async () => {
@@ -30,7 +46,6 @@ describe('Material Design 3 Colorblind Mode', () => {
     expect(toggle).toBeInTheDocument()
     expect(toggle).toHaveAttribute('aria-checked', 'false')
     expect(document.documentElement.getAttribute('data-colorblind')).toBeNull()
-    expect(document.querySelector('.status-legend')).toBeNull()
   })
 
   it('respects prefers-contrast: more when no explicit localStorage preference is set', async () => {
@@ -90,13 +105,6 @@ describe('Material Design 3 Colorblind Mode', () => {
     const icon1 = badge1.querySelector('svg.status-badge-icon')
     expect(icon1).toBeInTheDocument()
     expect(icon1).toHaveAttribute('aria-hidden', 'true')
-
-    // Verify the status legend appears with visual guide
-    const legend = document.querySelector('.status-legend') as HTMLElement
-    expect(legend).not.toBeNull()
-    expect(within(legend).getByText(/Colorblind Guide:/i)).toBeInTheDocument()
-    expect(within(legend).getByText(/Solid pill \+ Star/i)).toBeInTheDocument()
-    expect(within(legend).getByText(/Double pill \+ Check/i)).toBeInTheDocument()
   })
 
   it('toggles off and restores default appearance', async () => {
@@ -170,35 +178,19 @@ describe('Material Design 3 Colorblind Mode', () => {
     expect(modalBadge.querySelector('svg.status-badge-icon')).toBeInTheDocument()
   })
 
-  it('mounts into top appbar inside shell-appbar-badge and keeps toggles synchronized', async () => {
-    // Simulate Razor Pages shell appbar badge mount target
-    const badgeContainer = document.createElement('div')
-    badgeContainer.className = 'shell-appbar-badge'
-    const appbarMount = document.createElement('div')
-    appbarMount.id = 'shell-appbar-colorblind'
-    badgeContainer.appendChild(appbarMount)
-    document.body.appendChild(badgeContainer)
-
+  it('renders exactly one colorblind toggle, portaled into the shell appbar badge', async () => {
     renderIsland((d) =>
       d.queueResponse(jsonResponse(200, envelope([fixInq1()]))),
     )
     await screen.findByRole('row', { name: /O'Neill/ })
 
-    // Both top appbar and bottom accessibility bar toggles should be rendered
     const switches = screen.getAllByRole('switch', { name: /colorblind mode/i })
-    expect(switches.length).toBe(2)
+    expect(switches).toHaveLength(1)
+    expect(switches[0]).toHaveAttribute('id', 'colorblind-toggle-appbar')
+    expect(shellAppbar?.contains(switches[0])).toBe(true)
 
-    const [topSwitch, bottomSwitch] = switches
-    expect(topSwitch).toHaveAttribute('aria-checked', 'false')
-    expect(bottomSwitch).toHaveAttribute('aria-checked', 'false')
-    expect(badgeContainer.contains(topSwitch)).toBe(true)
-
-    // Activating top switch updates bottom switch simultaneously
-    await user.click(topSwitch)
-    expect(topSwitch).toHaveAttribute('aria-checked', 'true')
-    expect(bottomSwitch).toHaveAttribute('aria-checked', 'true')
-
-    // Clean up DOM
-    badgeContainer.remove()
+    await user.click(switches[0])
+    expect(switches[0]).toHaveAttribute('aria-checked', 'true')
+    expect(document.documentElement.getAttribute('data-colorblind')).toBe('true')
   })
 })

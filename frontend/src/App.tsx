@@ -10,7 +10,6 @@ import { LiveRegions, type ToastNotification } from './components/LiveRegions'
 import { Pagination } from './components/Pagination'
 import { ReconciliationPanel } from './components/ReconciliationPanel'
 import { ScenarioSwitcher } from './components/ScenarioSwitcher'
-import { StatusBadge } from './components/StatusBadge'
 import { Toolbar } from './components/Toolbar'
 import { fetchInquiry, fetchInquiryPage, putInquiryStatus } from './lib/api'
 import {
@@ -407,44 +406,6 @@ export default function App() {
             onNavigate={(page) => setRequest((current) => applyPageChange(current, page))}
           />
         )}
-
-        <aside className="accessibility-bar" aria-label="Accessibility preferences">
-          <div className="accessibility-bar-inner">
-            <div className="accessibility-bar-controls">
-              <ColorblindToggle
-                enabled={colorblindMode}
-                onToggle={toggleColorblindMode}
-                id="colorblind-toggle-bottom"
-                variant="standard"
-              />
-            </div>
-            {colorblindMode && (
-              <div className="status-legend" aria-label="Status visual guide">
-                <span className="status-legend-title">Colorblind Guide:</span>
-                <span className="status-legend-item">
-                  <StatusBadge status="New" colorblind={true} />
-                  <span className="status-legend-desc">Solid pill + Star</span>
-                </span>
-                <span className="status-legend-item">
-                  <StatusBadge status="Contacted" colorblind={true} />
-                  <span className="status-legend-desc">Dashed pill + Chat</span>
-                </span>
-                <span className="status-legend-item">
-                  <StatusBadge status="Pending" colorblind={true} />
-                  <span className="status-legend-desc">Dotted rect + Clock</span>
-                </span>
-                <span className="status-legend-item">
-                  <StatusBadge status="Registered" colorblind={true} />
-                  <span className="status-legend-desc">Double pill + Check</span>
-                </span>
-                <span className="status-legend-item">
-                  <StatusBadge status="Closed" colorblind={true} />
-                  <span className="status-legend-desc">Muted rect + Minus</span>
-                </span>
-              </div>
-            )}
-          </div>
-        </aside>
       </div>
 
       <LiveRegions

@@ -132,7 +132,6 @@ Visual updates occurring without page reloads are invisible to screen readers un
   - `Pending`: Dotted rectangular border + Clock icon (⏳)
   - `Registered`: Double solid border + Checkmark icon (✓)
   - `Closed`: Thin border with reduced contrast + Slash icon (⊘)
-- **Status Legend Guide**: An accessible guide (`.status-legend`) renders below the queue, mapping each visual badge style to its descriptive label.
 
 ### 3.4 Responsive Reflow, Contrast & Reduced Motion (WCAG 1.4.3, 1.4.4, 1.4.10, 2.3.3)
 - **Contrast Ratios**: All typography meets or exceeds WCAG AA 4.5:1 contrast against surface backgrounds (e.g., text `#1D1B20` on `#FDF8F5` achieves > 11:1).

@@ -29,7 +29,7 @@ The existing front-end baseline incorporates significant accessibility architect
 ### 2.1. Principle 1: Perceivable
 * **Non-Color Dependent Status Indication (WCAG 1.4.1 – Level A)**:
   * Status is never communicated by color alone. Every badge renders a plain-text status name (`New`, `Contacted`, `Pending`, `Registered`, `Closed`) via `StatusBadge.tsx`.
-  * **Colorblind Mode**: Includes an Okabe-Ito / Tol CVD palette exceeding WCAG AAA contrast ($\ge 7:1$), distinct border patterns (solid, dashed, dotted, double), semantic M3 SVG icons with `aria-hidden="true"`, and a `.status-legend` guide. Initial preference respects system `(prefers-contrast: more)`.
+  * **Colorblind Mode**: Includes an Okabe-Ito / Tol CVD palette exceeding WCAG AAA contrast ($\ge 7:1$), distinct border patterns (solid, dashed, dotted, double), and semantic M3 SVG icons with `aria-hidden="true"`. Initial preference respects system `(prefers-contrast: more)`.
 * **Color Contrast Ratios (WCAG 1.4.3 & 1.4.11 – Level AA)**:
   * CSS tokens in `styles.css` are computationally verified for body text ($\ge 4.5:1$), large text ($\ge 3:1$), and UI components/borders ($\ge 3:1$).
 * **Semantic Structure & Disambiguated Labels (WCAG 1.3.1 – Level A)**:

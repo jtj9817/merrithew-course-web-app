@@ -1,4 +1,5 @@
 using CourseInquiryDashboard.Models;
+using CourseInquiryDashboard.Models.Dtos;
 
 namespace CourseInquiryDashboard.DevTools;
 
@@ -149,6 +150,9 @@ public static class ScenarioCatalog
             new("pagination",
                 "45 generated inquiries spanning three pages to stress paging and sorting.",
                 () => GenerateLoad(45)),
+            new("missing-inquiries",
+                "26 inquiries for the troubleshooting demo: a worked backlog (Contacted/Pending/Registered/Closed) plus several recent New rows a non-'All' filter hides, one resubmitted duplicate email, and enough volume to push older rows onto page 2.",
+                BuildMissingInquiries),
             new("empty",
                 "No inquiries — the empty-state UI.",
                 () => []),
@@ -158,6 +162,108 @@ public static class ScenarioCatalog
     /// <summary>Listing metadata for the catalog (name, description, size).</summary>
     public static IReadOnlyList<ScenarioInfo> Infos { get; } =
         [.. All.Values.Select(scenario => new ScenarioInfo(scenario.Name, scenario.Description, scenario.Build().Count))];
+
+    /// <summary>
+    /// The troubleshooting-demonstration dataset (§ missing-inquiry runbook). Tuned for
+    /// SQLite and the default page size (<see cref="InquiryListQuery.DefaultPageSize"/> = 20,
+    /// sort <c>createdDateDesc</c>). The seeder backdates rows by lifecycle stage, so the
+    /// recent <see cref="Status.New"/> rows sort to the top: with a non-<c>All</c> status
+    /// filter active, a staffer still sees a full-looking worked backlog while those recent
+    /// New "missing" inquiries are hidden (the display-layer cause, C4). Two rows share one
+    /// email (a visitor who resubmitted after a timeout) so the duplicate-email reconciliation
+    /// returns a real group (C5 / non-idempotent intake), and 26 total rows push the oldest
+    /// onto page 2.
+    /// </summary>
+    private static IReadOnlyList<SeedInquiry> BuildMissingInquiries() =>
+    [
+        // Recent New rows — the "missing" inquiries a non-'All' filter hides.
+        new("Hannah", "Becker", "hannah.becker@example.com", Course.IntensiveReformer, Status.New,
+            Phone: "+1-416-555-0611", PreferredLocation: "Toronto",
+            Message: "Keen to start the reformer intensive this fall — which cohorts still have space?"),
+        // The same visitor resubmitting after the page appeared to fail: same email, a
+        // second stored row (intake is not idempotent, C5).
+        new("Hannah", "Becker", "hannah.becker@example.com", Course.IntensiveReformer, Status.New,
+            Phone: "+1-416-555-0611", PreferredLocation: "Toronto",
+            Message: "Resending — the form seemed to time out the first time. Still hoping to join the fall reformer intensive."),
+        new("Diego", "Fuentes", "diego.fuentes@example.com", Course.TotalBarreFoundation, Status.New,
+            PreferredLocation: "Miami",
+            Message: "Do you have Total Barre foundation dates before the new year?"),
+        new("Priya", "Nair", "priya.nair@example.com", Course.ZengaMatReformer, Status.New,
+            Phone: "+1-604-555-0640", PreferredLocation: "Vancouver",
+            Message: "Interested in ZEN•GA for my studio team — could you send the syllabus?"),
+        new("Tomas", "Berg", "tomas.berg@example.com", Course.HaloTrainerFundamentals, Status.New,
+            Message: "Is the Halo Trainer course open to instructors still completing certification?"),
+
+        // Worked backlog — Contacted.
+        new("Nadia", "Haddad", "nadia.haddad@example.com", Course.InjuriesAndSpecialPopulations, Status.Contacted,
+            Phone: "+1-514-555-0622", PreferredLocation: "Montreal",
+            Message: "Do you offer payment plans for the special populations course?"),
+        new("Owen", "Clarke", "owen.clarke@example.com", Course.CoreAthleticConditioning, Status.Contacted,
+            Phone: "+1-403-555-0633", PreferredLocation: "Calgary",
+            Message: "Strength coach wanting to add conditioning programming for my athletes."),
+        new("Sara", "Lindqvist", "sara.lindqvist@example.com", Course.TotalBarreFoundation, Status.Contacted,
+            PreferredLocation: "London",
+            Message: "Comparing Total Barre dates between the London and Toronto host sites."),
+        new("Marcus", "Wright", "marcus.wright@example.com", Course.IntensiveMatPlus, Status.Contacted,
+            Phone: "+1-312-555-0644", PreferredLocation: "Chicago",
+            Message: "What are the prerequisites for the Intensive Mat-Plus certification?"),
+        new("Leila", "Amini", "leila.amini@example.com", Course.PrenatalPilates, Status.Contacted,
+            Phone: "+1-647-555-0655", PreferredLocation: "Toronto",
+            Message: "Interested in the prenatal course — is it open to newly certified instructors?"),
+
+        // Worked backlog — Pending.
+        new("Victor", "Moreau", "victor.moreau@example.com", Course.RehabReformer, Status.Pending,
+            Phone: "+33-1-5555-0666", PreferredLocation: "Montreal",
+            Message: "Physiotherapist — waiting on clinic approval before I register for reformer rehab."),
+        new("Aiko", "Sato", "aiko.sato@example.com", Course.ZengaMatReformer, Status.Pending,
+            Phone: "+81-3-5555-0677", PreferredLocation: "Tokyo",
+            Message: "Please confirm the ZEN•GA course is taught in English before I commit."),
+        new("Ruth", "Mensah", "ruth.mensah@example.com", Course.FunctionalAnatomy, Status.Pending,
+            PreferredLocation: "New York",
+            Message: "Holding a place while I finalize my professional-development budget."),
+        new("Cole", "Robinson", "cole.robinson@example.com", Course.PilatesForGolf, Status.Pending,
+            Phone: "+1-323-555-0688", PreferredLocation: "Los Angeles",
+            Message: "Coaching a golf team and want sport-specific programming — what are the next dates?"),
+        new("Ingrid", "Solberg", "ingrid.solberg@example.com", Course.HaloTrainerFundamentals, Status.Pending,
+            Message: "Waiting to hear back on group rates for three instructors."),
+
+        // Worked backlog — Registered.
+        new("Daniela", "Costa", "daniela.costa@example.com", Course.IntensiveMatPlus, Status.Registered,
+            Phone: "+55-11-95555-0699", PreferredLocation: "Miami",
+            Message: "Excited to start — is there pre-reading before the Intensive Mat-Plus?"),
+        new("Peter", "Novak", "peter.novak@example.com", Course.IntensiveReformer, Status.Registered,
+            Phone: "+420-2-5555-0700", PreferredLocation: "Berlin",
+            Message: "Do you provide the reformer course materials in German?"),
+        new("Grace", "Adeyemi", "grace.adeyemi@example.com", Course.InjuriesAndSpecialPopulations, Status.Registered,
+            Phone: "+1-212-555-0711", PreferredLocation: "New York",
+            Message: "I work with post-surgical clients — looking forward to the special populations cohort."),
+        new("Sam", "Whitfield", "sam.whitfield@example.com", Course.CoreAthleticConditioning, Status.Registered,
+            PreferredLocation: "Sydney",
+            Message: "Registered for conditioning — can you confirm the venue address?"),
+        new("Yara", "Khalil", "yara.khalil@example.com", Course.TotalBarreFoundation, Status.Registered,
+            Phone: "+971-4-5555-0722", PreferredLocation: "Dubai",
+            Message: "Opening a boutique studio — thrilled to certify on Total Barre."),
+
+        // Worked backlog — Closed.
+        new("Elena", "Petrova", "elena.petrova@example.com", Course.RehabReformer, Status.Closed,
+            PreferredLocation: "London",
+            Message: "Physiotherapist asking about upcoming reformer rehab dates in the UK."),
+        new("Jack", "Sullivan", "jack.sullivan@example.com", Course.IntensiveCadillacChairBarrels, Status.Closed,
+            Phone: "+1-416-555-0733", PreferredLocation: "Toronto",
+            Message: "What are the prerequisites for the Cadillac, Chair & Barrels intensive?"),
+        new("Mei", "Lin", "mei.lin@example.com", Course.ZengaMatReformer, Status.Closed,
+            Phone: "+65-5555-0744", PreferredLocation: "Singapore",
+            Message: "An advisor recommended ZEN•GA for my studio — could you send details?"),
+        new("Andre", "Dumas", "andre.dumas@example.com", Course.CoreAthleticConditioning, Status.Closed,
+            Phone: "+1-514-555-0755", PreferredLocation: "Montreal",
+            Message: "Personal trainer wanting to expand my scope of practice."),
+        new("Fatima", "Rahim", "fatima.rahim@example.com", Course.FunctionalAnatomy, Status.Closed,
+            PreferredLocation: "Boston",
+            Message: "Comparing anatomy-for-movement courses — what sets yours apart?"),
+        new("Liam", "Foster", "liam.foster@example.com", Course.PrenatalPilates, Status.Closed,
+            Phone: "+61-2-5555-0766", PreferredLocation: "Sydney",
+            Message: "Following up after the info session about the prenatal course."),
+    ];
 
     /// <summary>
     /// Deterministically generates <paramref name="count"/> inquiries by cycling

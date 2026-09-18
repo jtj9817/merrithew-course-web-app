@@ -10,10 +10,18 @@ public static class DevToolsOptions
 {
     public const string ScenarioSeedingKey = "DevTools:ScenarioSeeding";
     public const string CrmSimulationKey = "DevTools:CrmSimulation";
+    public const string IntakeFaultKey = "DevTools:IntakeFault";
+    public const string ReconciliationKey = "DevTools:Reconciliation";
 
     public static bool ScenarioSeedingEnabled(IHostEnvironment environment, IConfiguration configuration) =>
         environment.IsDevelopment() || configuration.GetValue<bool>(ScenarioSeedingKey);
 
     public static bool CrmSimulationEnabled(IHostEnvironment environment, IConfiguration configuration) =>
         environment.IsDevelopment() || configuration.GetValue<bool>(CrmSimulationKey);
+
+    public static bool IntakeFaultEnabled(IHostEnvironment environment, IConfiguration configuration) =>
+        environment.IsDevelopment() || configuration.GetValue<bool>(IntakeFaultKey);
+
+    public static bool ReconciliationEnabled(IHostEnvironment environment, IConfiguration configuration) =>
+        environment.IsDevelopment() || configuration.GetValue<bool>(ReconciliationKey);
 }

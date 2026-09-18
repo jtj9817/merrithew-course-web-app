@@ -1,4 +1,5 @@
 using System.Diagnostics.Metrics;
+using CourseInquiryDashboard.DevTools;
 using CourseInquiryDashboard.Hosting;
 using CourseInquiryDashboard.Models;
 using CourseInquiryDashboard.Models.Dtos;
@@ -525,7 +526,7 @@ public sealed class InquiryServiceTests
             ? NullLoggerFactory.Instance
             : LoggerFactory.Create(builder => builder.AddProvider(logs));
         return new InquiryService(db, crm ?? new ScriptedCrmClient(), clock ?? new MutableTimeProvider(),
-            Metrics, loggerFactory.CreateLogger<InquiryService>());
+            Metrics, new IntakeFaultRuntime(), loggerFactory.CreateLogger<InquiryService>());
     }
 
     private static CourseInquiry NewRow(int id, Status status, DateTime created) => new()

@@ -61,6 +61,10 @@ builder.Services.AddOptions<CrmSimulationOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 builder.Services.AddSingleton<CrmSimulationRuntime>();
+// Registered in every environment (as CrmSimulationRuntime is): the switch is inert
+// until armed, and only the dev-gated endpoint can arm it, so an unmapped production
+// runtime is permanently inert.
+builder.Services.AddSingleton<IntakeFaultRuntime>();
 builder.Services.AddScoped<IInquiryService, InquiryService>();
 builder.Services.AddSingleton<ICrmClient, SimulatedCrmClient>();
 builder.Services.AddScoped<IScenarioSeeder, ScenarioSeeder>();
@@ -174,6 +178,21 @@ if (DevToolsOptions.ScenarioSeedingEnabled(app.Environment, app.Configuration))
 if (DevToolsOptions.CrmSimulationEnabled(app.Environment, app.Configuration))
 {
     app.MapCrmSimulationEndpoints();
+}
+
+// Dev-only intake fault injection: arm the next create(s) to fail before any write,
+// staging the genuine "backend/DB failure → never stored" branch of the
+// troubleshooting demonstration. Mapped only when explicitly enabled.
+if (DevToolsOptions.IntakeFaultEnabled(app.Environment, app.Configuration))
+{
+    app.MapIntakeFaultEndpoints();
+}
+
+// Dev-only, read-only reconciliation reports (count-by-status / last-7-days /
+// duplicate-email / by-email) over the live store — the runbook's SQL, as LINQ.
+if (DevToolsOptions.ReconciliationEnabled(app.Environment, app.Configuration))
+{
+    app.MapReconciliationEndpoints();
 }
 
 await app.RunAsync();

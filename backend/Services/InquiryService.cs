@@ -1,3 +1,4 @@
+using CourseInquiryDashboard.DevTools;
 using CourseInquiryDashboard.Hosting;
 using CourseInquiryDashboard.Models;
 using CourseInquiryDashboard.Models.Dtos;
@@ -23,12 +24,21 @@ public sealed partial class InquiryService(
     ICrmClient crmClient,
     TimeProvider clock,
     InquiryMetrics metrics,
+    IntakeFaultRuntime intakeFault,
     ILogger<InquiryService> logger) : IInquiryService
 {
     public async Task<InquiryResponse> CreateAsync(CreateInquiryDto request, CancellationToken cancellationToken = default)
     {
         // C5: observe cancellation before the write starts — never fabricate success.
         cancellationToken.ThrowIfCancellationRequested();
+
+        // DEV fault injection (troubleshooting demo): when armed, throw before the
+        // Add/SaveChanges below so nothing is persisted — a faithful "backend/DB
+        // failure → never stored" case. Inert by default and in production (only the
+        // dev-gated endpoint can arm it). The exception flows through the existing
+        // error middleware: sanitized ErrorType log + intake serverError metric + 500.
+        if (intakeFault.TryConsume())
+            throw new IntakeFaultInjectedException();
 
         var now = clock.GetUtcNow().UtcDateTime; // sampled once for both timestamps (C2)
         var inquiry = new CourseInquiry

@@ -13,6 +13,9 @@ POST {{host}}/api/dev/scenarios/demo
 ### Simulate multi-page pagination (45 rows)
 POST {{host}}/api/dev/scenarios/pagination
 
+### Simulate the troubleshooting demo dataset (26 rows: worked backlog + hidden recent New + a duplicate email)
+POST {{host}}/api/dev/scenarios/missing-inquiries
+
 ### Simulate a single page of mixed statuses (6 rows)
 POST {{host}}/api/dev/scenarios/single-page
 
@@ -27,3 +30,28 @@ POST {{host}}/api/dev/scenarios/demo?reset=false
 
 ### Clear every inquiry
 DELETE {{host}}/api/dev/scenarios
+
+
+# ── Troubleshooting demonstration dev tools ─────────────────────────────────
+# Available in Development, or when the matching DevTools:* flag is set.
+
+### Read the intake fault switch (armed count + total injected)
+GET {{host}}/api/dev/intake-fault
+
+### Arm the next submission to fail before any write (0 disarms)
+PUT {{host}}/api/dev/intake-fault
+Content-Type: application/json
+
+{ "armCount": 1 }
+
+### Submit one inquiry through the real endpoint — expect 500 with a traceId, no row stored (fault armed)
+POST {{host}}/api/inquiries
+Content-Type: application/json
+
+{ "firstName": "Fault", "lastName": "Demo", "email": "fault.demo@example.test", "courseName": "Intake fault demonstration" }
+
+### Reconciliation summary (count-by-status, last-7-days, duplicate emails)
+GET {{host}}/api/dev/reconciliation
+
+### Reconciliation by reported email (stored-but-hidden vs never-stored tiebreaker)
+GET {{host}}/api/dev/reconciliation/by-email?email=hannah.becker@example.com

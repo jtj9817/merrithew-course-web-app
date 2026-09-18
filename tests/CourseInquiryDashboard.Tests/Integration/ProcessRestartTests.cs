@@ -125,6 +125,7 @@ public sealed class ProcessRestartTests
             </Project>
             """);
         File.WriteAllText(Path.Combine(directory, "Program.cs"), """
+            using CourseInquiryDashboard.DevTools;
             using CourseInquiryDashboard.Hosting;
             using CourseInquiryDashboard.Models;
             using CourseInquiryDashboard.Models.Dtos;
@@ -149,7 +150,8 @@ public sealed class ProcessRestartTests
             var crm = new GatedCrmClient(enteredMarker, releaseGate);
             await using var db = new AppDbContext(options);
             var metrics = new InquiryMetrics(new System.Diagnostics.Metrics.Meter(InquiryMetrics.MeterName));
-            var service = new InquiryService(db, crm, TimeProvider.System, metrics, NullLogger<InquiryService>.Instance);
+            var service = new InquiryService(db, crm, TimeProvider.System, metrics,
+                new IntakeFaultRuntime(), NullLogger<InquiryService>.Instance);
             var create = service.CreateAsync(new CreateInquiryDto
             {
                 FirstName = "Crash",

@@ -1752,6 +1752,75 @@ noscript a {
   color: var(--md-sys-color-on-surface);
 }
 
+/* ── Material Design 3 Progress Indicators ──────────────────────────────── */
+
+/* Circular indeterminate spinner (M3). Inherits currentColor so it reads on
+   both filled and outlined buttons; decorative by default (a live region
+   announces the action separately). */
+.spinner {
+  display: inline-block;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2.5px solid color-mix(in srgb, currentColor 26%, transparent);
+  border-block-start-color: currentColor;
+  animation: spinner-rotate 900ms linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Linear indeterminate progress (M3): a sliding indicator over a quiet track,
+   sitting flush at the top edge of a dev-tool panel while it works. */
+.linear-progress {
+  inline-size: 100%;
+}
+
+.linear-progress-track {
+  position: relative;
+  overflow: hidden;
+  block-size: 4px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.linear-progress-indicator {
+  position: absolute;
+  inset-block: 0;
+  inline-size: 40%;
+  border-radius: inherit;
+  background-color: var(--md-sys-color-primary);
+  animation: linear-progress-slide 1.15s var(--md-sys-motion-easing-standard) infinite;
+}
+
+@keyframes linear-progress-slide {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+/* Reduced motion: the global rule freezes the animations to their final frame,
+   which would hide the sliding indicator. Restore a legible static state so the
+   "busy" signal survives — meaning is still carried by the live-region text. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    border-color: currentColor;
+    opacity: 0.55;
+  }
+
+  .linear-progress-indicator {
+    inline-size: 100%;
+    transform: none;
+    opacity: 0.5;
+  }
+}
+
 /* ── Material Design 3 Switch & Toggle Component ────────────────────────── */
 
 .m3-toggle-wrapper {

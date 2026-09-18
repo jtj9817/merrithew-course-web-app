@@ -1632,8 +1632,13 @@ noscript a {
   color: var(--md-sys-color-on-primary);
 }
 
+/* Filled red button keeps its legible white label on hover; the highlight is a
+   darkened surface + elevation lift instead of the outlined buttons' red-ink
+   treatment (which would render red text on a red fill). */
 .dev-crm-actions .dev-crm-run:hover:not(:disabled) {
   background-color: #94211F;
+  color: var(--md-sys-color-on-primary);
+  box-shadow: var(--md-sys-elevation-2);
 }
 
 .dev-crm-actions button:disabled {

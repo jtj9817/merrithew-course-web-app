@@ -1,9 +1,9 @@
 /* ── Merrithew Brand Identity & Material Design 3 Design Tokens ───────────
-   Brand Source Colors (merrithew.com):
-   - Primary:   #A6192E (Merrithew Red / Crimson — PMS 200 C brand cornerstone)
-   - Secondary: #3D474E (Mindful Slate / Charcoal — equipment & studio neutral)
-   - Tertiary:  #1E656D (Mindful Movement Teal / Sage — wellness accent)
-   - Neutral:   Desaturated warm stone with red-hue tint (~15° warm neutral tint)
+   Brand Source Colors:
+   - Primary:   #AC2724 (Brick Red — primary brand color)
+   - Secondary: #583E24 (Dark Brown — secondary accent)
+   - Tertiary:  #3E4524 (Dark Olive — tertiary accent)
+   - Neutrals:  #E8E8E8 / #C1C6C9 (warm-gray surface & container neutrals)
 
    Material Design 3 Token Hierarchy:
    All color roles, typography, shape, elevation, motion, and state layers
@@ -21,93 +21,94 @@
   --font-family-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, Consolas, monospace;
 
   /* ── M3 Color Roles: Primary (Merrithew Crimson) ───────────────────────── */
-  --md-sys-color-primary: #9B1B30;
-  --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #FFDADA;
-  --md-sys-color-on-primary-container: #41000B;
-  --md-sys-color-inverse-primary: #FFB3B9;
+  --md-sys-color-primary: #AC2724;
+  --md-sys-color-on-primary: #FFF7F5;
+  --md-sys-color-primary-container: #F0D6D4;
+  --md-sys-color-on-primary-container: #4A100D;
+  --md-sys-color-inverse-primary: #F3B7B3;
 
   /* ── M3 Color Roles: Secondary (Mindful Slate) ─────────────────────────── */
-  --md-sys-color-secondary: #475B66;
-  --md-sys-color-on-secondary: #FFFFFF;
-  --md-sys-color-secondary-container: #D5E4EE;
-  --md-sys-color-on-secondary-container: #0F1D25;
+  --md-sys-color-secondary: #583E24;
+  --md-sys-color-on-secondary: #FFF8F0;
+  --md-sys-color-secondary-container: #D8CFC5;
+  --md-sys-color-on-secondary-container: #26190B;
 
   /* ── M3 Color Roles: Tertiary (Movement Teal) ─────────────────────────── */
-  --md-sys-color-tertiary: #1E656D;
-  --md-sys-color-on-tertiary: #FFFFFF;
-  --md-sys-color-tertiary-container: #C7ECF4;
-  --md-sys-color-on-tertiary-container: #001F24;
+  --md-sys-color-tertiary: #3E4524;
+  --md-sys-color-on-tertiary: #F6F9EC;
+  --md-sys-color-tertiary-container: #D6D9C3;
+  --md-sys-color-on-tertiary-container: #1B1F0B;
 
   /* ── M3 Color Roles: Surface & Surface Containers ──────────────────────── */
-  --md-sys-color-surface: #FCF8F8;
-  --md-sys-color-on-surface: #201A1A;
-  --md-sys-color-surface-variant: #F3DFDF;
-  --md-sys-color-on-surface-variant: #4D3E3E;
-  --md-sys-color-surface-container-lowest: #FFFFFF;
-  --md-sys-color-surface-container-low: #F8F2F2;
-  --md-sys-color-surface-container: #F2ECEC;
-  --md-sys-color-surface-container-high: #ECE6E6;
-  --md-sys-color-surface-container-highest: #E6E0E0;
+  --md-sys-color-surface: #E8E8E8;
+  --md-sys-color-on-surface: #25201B;
+  --md-sys-color-surface-variant: #D9DDDF;
+  --md-sys-color-on-surface-variant: #5B5148;
+  --md-sys-color-surface-container-lowest: #F6F7F7;
+  --md-sys-color-surface-container-low: #EEF0F0;
+  --md-sys-color-surface-container: #DEDFE0;
+  --md-sys-color-surface-container-high: #D4D7DA;
+  --md-sys-color-surface-container-highest: #C1C6C9;
 
   /* ── M3 Color Roles: Inverse Surface ───────────────────────────────────── */
-  --md-sys-color-inverse-surface: #352F2F;
-  --md-sys-color-inverse-on-surface: #F9EFEF;
+  --md-sys-color-inverse-surface: #322A22;
+  --md-sys-color-inverse-on-surface: #F4EFE8;
 
   /* ── M3 Color Roles: Outline & Borders ─────────────────────────────────── */
-  --md-sys-color-outline: #776767;
-  --md-sys-color-outline-variant: #D7C1C1;
+  --md-sys-color-outline: #5C6467;
+  --md-sys-color-outline-variant: #C6CCCF;
 
   /* ── M3 Color Roles: Error ─────────────────────────────────────────────── */
-  --md-sys-color-error: #BA1A1A;
-  --md-sys-color-on-error: #FFFFFF;
-  --md-sys-color-error-container: #FFEDEA;
-  --md-sys-color-on-error-container: #410002;
+  --md-sys-color-error: #8A1C16;
+  --md-sys-color-on-error: #FFF6F4;
+  --md-sys-color-error-container: #F1DAD7;
+  --md-sys-color-on-error-container: #3A0805;
 
   /* ── M3 Color Roles: Scrim & Shadow ────────────────────────────────────── */
-  --md-sys-color-scrim: rgba(32, 26, 26, 0.54);
-  --md-sys-color-shadow: rgba(32, 26, 26, 0.16);
+  --md-sys-color-scrim: rgba(37, 32, 27, 0.54);
+  --md-sys-color-shadow: rgba(37, 32, 27, 0.16);
 
-  /* ── Status Badge Semantics (Contrast-checked ≥ 7:1) ───────────────────── */
-  --md-sys-color-status-new-bg: #E1F0F8;
-  --md-sys-color-status-new-text: #004D66;
-  --md-sys-color-status-contacted-bg: #FFF0C2;
-  --md-sys-color-status-contacted-text: #483600;
-  --md-sys-color-status-pending-bg: #FFE4D3;
-  --md-sys-color-status-pending-text: #602800;
-  --md-sys-color-status-registered-bg: #D4F5DE;
-  --md-sys-color-status-registered-text: #0A4E27;
-  --md-sys-color-status-closed-bg: #E4E9EC;
-  --md-sys-color-status-closed-text: #2C3134;
+  /* ── Status Badge Semantics (Contrast-checked ≥ 7.7:1 (WCAG 2.1 AA)) ───── */
+  --md-sys-color-status-new-bg: #F4D6D4;
+  --md-sys-color-status-new-text: #5E130F;
+  --md-sys-color-status-contacted-bg: #E9E0D3;
+  --md-sys-color-status-contacted-text: #453019;
+  --md-sys-color-status-pending-bg: #F3DFD1;
+  --md-sys-color-status-pending-text: #6A3312;
+  --md-sys-color-status-registered-bg: #DBE0CA;
+  --md-sys-color-status-registered-text: #33391A;
+  --md-sys-color-status-closed-bg: #DFE3E6;
+  --md-sys-color-status-closed-text: #33393E;
 
-  /* ── M3 Colorblind High-Discrimination Tokens (Okabe-Ito / Tol CVD Science) ──
-     Surpasses WCAG 2.1 AAA (contrast ≥ 7:1) and provides 5 distinct hues
-     (Cobalt Blue, Amber Gold, Royal Violet, Mint Teal, Slate Charcoal)
-     that remain unambiguous across Protanopia, Deuteranopia, Tritanopia, and Monochromacy. */
-  --md-sys-color-cb-new-bg: #D0E4FF;
-  --md-sys-color-cb-new-text: #003366;
-  --md-sys-color-cb-new-border: #185FA5;
-  --md-sys-color-cb-new-icon: #003366;
+  /* ── M3 Colorblind High-Discrimination Tokens (Hybrid CVD-Safe Hues) ──────
+     WCAG 2.1 AA (≥ 5.2:1) with a strict luminance ladder (bg luminances
+     0.80 → 0.68 → 0.51 → 0.32 → 0.04) so the five statuses stay discriminable
+     under protanopia, deuteranopia, and tritanopia; hue is supplemented by
+     border style, corner shape, and glyph cues. */
+  --md-sys-color-cb-new-bg: #DCE8FA;
+  --md-sys-color-cb-new-text: #0B3A67;
+  --md-sys-color-cb-new-border: #3D6EA8;
+  --md-sys-color-cb-new-icon: #0B3A67;
 
-  --md-sys-color-cb-contacted-bg: #FEE79A;
-  --md-sys-color-cb-contacted-text: #463300;
-  --md-sys-color-cb-contacted-border: #9E7000;
-  --md-sys-color-cb-contacted-icon: #463300;
+  --md-sys-color-cb-contacted-bg: #EDD68E;
+  --md-sys-color-cb-contacted-text: #413200;
+  --md-sys-color-cb-contacted-border: #9C7A10;
+  --md-sys-color-cb-contacted-icon: #413200;
 
-  --md-sys-color-cb-pending-bg: #EEDBFF;
-  --md-sys-color-cb-pending-text: #3D1A6D;
-  --md-sys-color-cb-pending-border: #7C3AED;
-  --md-sys-color-cb-pending-icon: #3D1A6D;
+  --md-sys-color-cb-pending-bg: #C9B5E8;
+  --md-sys-color-cb-pending-text: #32215E;
+  --md-sys-color-cb-pending-border: #6B4EC4;
+  --md-sys-color-cb-pending-icon: #32215E;
 
-  --md-sys-color-cb-registered-bg: #B6F6E5;
-  --md-sys-color-cb-registered-text: #003B32;
-  --md-sys-color-cb-registered-border: #007D67;
-  --md-sys-color-cb-registered-icon: #003B32;
+  --md-sys-color-cb-registered-bg: #4FA98C;
+  --md-sys-color-cb-registered-text: #062E23;
+  --md-sys-color-cb-registered-border: #17614A;
+  --md-sys-color-cb-registered-icon: #062E23;
 
-  --md-sys-color-cb-closed-bg: #DCE2E6;
-  --md-sys-color-cb-closed-text: #191E22;
-  --md-sys-color-cb-closed-border: #566168;
-  --md-sys-color-cb-closed-icon: #191E22;
+  --md-sys-color-cb-closed-bg: #33393F;
+  --md-sys-color-cb-closed-text: #E9EEF2;
+  --md-sys-color-cb-closed-border: #97A4AE;
+  --md-sys-color-cb-closed-icon: #E9EEF2;
 
   /* ── M3 Type Scale: Size / Line-Height / Weight / Letter-Spacing ───────── */
   --md-sys-typescale-display-large-size: 3.5625rem;
@@ -180,11 +181,11 @@
 
   /* ── M3 Elevation Tokens (Shadow Levels 1–3) ───────────────────────────── */
   --md-sys-elevation-0: none;
-  --md-sys-elevation-1: 0px 1px 3px 1px rgba(32, 26, 26, 0.12), 0px 1px 2px 0px rgba(32, 26, 26, 0.20);
-  --md-sys-elevation-2: 0px 2px 6px 2px rgba(32, 26, 26, 0.12), 0px 1px 2px 0px rgba(32, 26, 26, 0.20);
-  --md-sys-elevation-3: 0px 4px 8px 3px rgba(32, 26, 26, 0.12), 0px 1px 3px 0px rgba(32, 26, 26, 0.20);
-  --md-sys-elevation-4: 0px 6px 10px 4px rgba(32, 26, 26, 0.12), 0px 2px 3px 0px rgba(32, 26, 26, 0.20);
-  --md-sys-elevation-5: 0px 8px 12px 6px rgba(32, 26, 26, 0.12), 0px 4px 4px 0px rgba(32, 26, 26, 0.20);
+  --md-sys-elevation-1: 0px 1px 3px 1px rgba(37, 32, 27, 0.12), 0px 1px 2px 0px rgba(37, 32, 27, 0.20);
+  --md-sys-elevation-2: 0px 2px 6px 2px rgba(37, 32, 27, 0.12), 0px 1px 2px 0px rgba(37, 32, 27, 0.20);
+  --md-sys-elevation-3: 0px 4px 8px 3px rgba(37, 32, 27, 0.12), 0px 1px 3px 0px rgba(37, 32, 27, 0.20);
+  --md-sys-elevation-4: 0px 6px 10px 4px rgba(37, 32, 27, 0.12), 0px 2px 3px 0px rgba(37, 32, 27, 0.20);
+  --md-sys-elevation-5: 0px 8px 12px 6px rgba(37, 32, 27, 0.12), 0px 4px 4px 0px rgba(37, 32, 27, 0.20);
 
   /* ── M3 Motion Tokens ─────────────────────────────────────────────────── */
   --md-sys-motion-duration-short1: 50ms;
@@ -504,7 +505,7 @@ noscript a {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23776767' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C6467' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   background-size: 16px 16px;
@@ -776,36 +777,36 @@ noscript a {
 .status-new {
   background-color: var(--md-sys-color-status-new-bg);
   color: var(--md-sys-color-status-new-text);
-  border-color: #B2D8EE;
+  border-color: #DFA6A3;
 }
 
 .status-contacted {
   background-color: var(--md-sys-color-status-contacted-bg);
   color: var(--md-sys-color-status-contacted-text);
-  border-color: #FCE18F;
+  border-color: #C4B08E;
 }
 
 .status-pending {
   background-color: var(--md-sys-color-status-pending-bg);
   color: var(--md-sys-color-status-pending-text);
-  border-color: #F7CCA8;
+  border-color: #DBB48C;
 }
 
 .status-registered {
   background-color: var(--md-sys-color-status-registered-bg);
   color: var(--md-sys-color-status-registered-text);
-  border-color: #A3E5B7;
+  border-color: #B4BE96;
 }
 
 .status-closed {
   background-color: var(--md-sys-color-status-closed-bg);
   color: var(--md-sys-color-status-closed-text);
-  border-color: #C6D0D6;
+  border-color: #B8C1C7;
 }
 
 /* ── M3 Multimodal Colorblind Status Badges ───────────────────────────────
    In Colorblind Mode: status is communicated multimodally through:
-   1. Distinct Okabe-Ito / Tol accessible tonal values (all contrast ≥ 7:1)
+   1. CVD-safe hue families on a strict luminance ladder (WCAG 2.1 AA ≥ 5.2:1)
    2. Dedicated Material Design 3 semantic SVG glyphs
    3. Distinct tactile border styles (solid, dashed, dotted, double, neutral)
    4. Distinct geometric corner radii (pill, rounded-rect, squircle)
@@ -878,7 +879,7 @@ noscript a {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23776767' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C6467' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 16px 16px;
@@ -958,16 +959,16 @@ noscript a {
 
 .apply.apply--modified:hover:not(:disabled),
 .apply[data-modified="true"]:hover:not(:disabled) {
-  background-color: #881427;
-  border-color: #881427;
+  background-color: #94211F;
+  border-color: #94211F;
   color: var(--md-sys-color-on-primary);
   box-shadow: var(--md-sys-elevation-2);
 }
 
 .apply.apply--modified:active:not(:disabled),
 .apply[data-modified="true"]:active:not(:disabled) {
-  background-color: #720e1f;
-  border-color: #720e1f;
+  background-color: #7D1B19;
+  border-color: #7D1B19;
   box-shadow: var(--md-sys-elevation-0);
 }
 
@@ -983,10 +984,10 @@ noscript a {
 /* Colorblind Mode Enhanced Modified Apply Button: High-Contrast Cobalt with Outer Ring */
 [data-colorblind="true"] .apply.apply--modified,
 [data-colorblind="true"] .apply[data-modified="true"] {
-  background-color: #003366;
-  border-color: #001F3F;
+  background-color: #2C4A6E;
+  border-color: #1B334C;
   color: #FFFFFF;
-  outline: 2px solid #003366;
+  outline: 2px solid #2C4A6E;
   outline-offset: 1px;
   box-shadow: var(--md-sys-elevation-2);
   font-weight: 700;
@@ -994,16 +995,22 @@ noscript a {
 
 [data-colorblind="true"] .apply.apply--modified:hover:not(:disabled),
 [data-colorblind="true"] .apply[data-modified="true"]:hover:not(:disabled) {
-  background-color: #002244;
-  border-color: #001122;
+  background-color: #233F5D;
+  border-color: #142A40;
   box-shadow: var(--md-sys-elevation-3);
+}
+
+[data-colorblind="true"] .apply.apply--modified:active:not(:disabled),
+[data-colorblind="true"] .apply[data-modified="true"]:active:not(:disabled) {
+  background-color: #1B334C;
+  border-color: #0D1F30;
 }
 
 /* Colorblind Mode High-Contrast Focus Rings */
 [data-colorblind="true"] :focus-visible {
-  outline: 3px solid #003366 !important;
+  outline: 3px solid #2C4A6E !important;
   outline-offset: 3px !important;
-  box-shadow: 0 0 0 5px rgba(0, 51, 102, 0.25) !important;
+  box-shadow: 0 0 0 5px rgba(44, 74, 110, 0.30) !important;
 }
 
 /* ── Loading, Empty, & Error States ──────────────────────────────────────── */
@@ -1062,11 +1069,11 @@ noscript a {
 }
 
 .retry:hover {
-  background-color: #9E1010;
+  background-color: #741712;
 }
 
 .retry:active {
-  background-color: #840909;
+  background-color: #5F120E;
 }
 
 /* ── Pagination: M3 Tonal Controls (48px Min Interactive Height) ─────────── */
@@ -1626,7 +1633,7 @@ noscript a {
 }
 
 .dev-crm-actions .dev-crm-run:hover:not(:disabled) {
-  background-color: #881427;
+  background-color: #94211F;
 }
 
 .dev-crm-actions button:disabled {
@@ -1791,7 +1798,7 @@ noscript a {
 }
 
 .m3-switch-chip--selected:hover {
-  background-color: #C2D7E5;
+  background-color: #CFC3B6;
   border-color: var(--md-sys-color-secondary);
   color: var(--md-sys-color-on-secondary-container);
 }
@@ -1833,8 +1840,8 @@ noscript a {
 }
 
 [data-colorblind="true"] .m3-switch-chip--selected .m3-switch-track {
-  background-color: #003366;
-  border-color: #001F3F;
+  background-color: #2C4A6E;
+  border-color: #1B334C;
 }
 
 /* M3 Switch Thumb: 12px circle expanding and sliding */
@@ -1860,8 +1867,8 @@ noscript a {
 }
 
 [data-colorblind="true"] .m3-switch-chip--selected .m3-switch-thumb {
-  background-color: #FFFFFF;
-  color: #003366;
+  background-color: #F2F7FB;
+  color: #2C4A6E;
 }
 
 .m3-thumb-icon {

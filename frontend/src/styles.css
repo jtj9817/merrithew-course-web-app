@@ -1841,6 +1841,196 @@ noscript a {
   }
 }
 
+/* ── Dev CRM sync log modal (M3 dialog) ─────────────────────────────────── */
+
+/* Low-emphasis M3 text button that reveals the log; overrides the shared
+   filled/outlined dev-action button styling (higher specificity wins). */
+.dev-crm-actions .dev-crm-log {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--md-sys-color-primary);
+}
+
+.dev-crm-actions .dev-crm-log:hover:not(:disabled) {
+  border-color: transparent;
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  color: var(--md-sys-color-primary);
+}
+
+.dev-log-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background-color: var(--md-sys-color-scrim);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: scrim-enter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) both;
+}
+
+.dev-log-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - 48px);
+  padding: var(--space-6);
+  background-color: var(--md-sys-color-surface-container-high);
+  border-radius: var(--md-sys-shape-corner-extra-large);
+  box-shadow: var(--md-sys-elevation-3);
+  animation: modal-enter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) both;
+}
+
+.dev-log-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.dev-log-eyebrow {
+  margin: 0 0 2px;
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-label-small-size);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-primary);
+}
+
+.dev-log-title {
+  margin: 0;
+  font-size: var(--md-sys-typescale-headline-small-size);
+  line-height: var(--md-sys-typescale-headline-small-line-height);
+  font-weight: var(--md-sys-typescale-headline-small-weight);
+  color: var(--md-sys-color-on-surface);
+}
+
+.dev-log-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  flex-shrink: 0;
+}
+
+.dev-log-close:hover {
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
+}
+
+.dev-log-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--md-sys-color-surface-container-lowest);
+}
+
+.dev-log-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dev-log-summary-item dt {
+  font-size: var(--md-sys-typescale-label-small-size);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.dev-log-summary-item dd {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-body-small-size);
+  color: var(--md-sys-color-on-surface);
+}
+
+.dev-log-lines {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--space-2);
+  list-style: none;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--md-sys-color-surface-container-lowest);
+}
+
+.dev-log-line {
+  display: grid;
+  grid-template-columns: 3.25rem 2rem 1fr;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 4px var(--space-2);
+  border-inline-start: 3px solid transparent;
+}
+
+.dev-log-line + .dev-log-line {
+  border-block-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.dev-log-line--info {
+  border-inline-start-color: var(--md-sys-color-outline-variant);
+}
+
+.dev-log-line--warning {
+  border-inline-start-color: var(--md-sys-color-error);
+  background-color: var(--md-sys-color-error-container);
+}
+
+.dev-log-level {
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-label-small-size);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.dev-log-line--warning .dev-log-level {
+  color: var(--md-sys-color-error);
+}
+
+.dev-log-event {
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-label-small-size);
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.7;
+}
+
+.dev-log-message {
+  font-family: var(--font-family-mono);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.dev-log-line--warning .dev-log-message {
+  color: var(--md-sys-color-on-error-container);
+}
+
+.dev-log-note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
 /* ── Material Design 3 Switch & Toggle Component ────────────────────────── */
 
 .m3-toggle-wrapper {

@@ -7,6 +7,8 @@ import {
   updateCrmSimulation,
 } from '../lib/crmSimulation'
 import type { CrmSimulationCatalog, CrmSimulationSettings, CrmSyncResult } from '../lib/crmSimulation'
+import { CrmSyncLogModal } from './CrmSyncLogModal'
+import type { CrmSyncRun } from './CrmSyncLogModal'
 import { LinearProgress, Spinner } from './Progress'
 
 interface CrmSimulationControlProps {
@@ -43,6 +45,8 @@ export function CrmSimulationControl({ onInquiryCreated, onNotify }: CrmSimulati
   const [catalog, setCatalog] = useState<CrmSimulationCatalog | null>(null)
   const [settings, setSettings] = useState<CrmSimulationSettings | null>(null)
   const [pending, setPending] = useState<PendingAction>(null)
+  const [lastRun, setLastRun] = useState<CrmSyncRun | null>(null)
+  const [logOpen, setLogOpen] = useState(false)
   const onInquiryCreatedRef = useRef(onInquiryCreated)
   onInquiryCreatedRef.current = onInquiryCreated
   const onNotifyRef = useRef(onNotify)
@@ -109,6 +113,7 @@ export function CrmSimulationControl({ onInquiryCreated, onNotify }: CrmSimulati
     onInquiryCreatedRef.current()
     const result = await fetchCrmSyncResult(inquiryId)
     if (result) {
+      setLastRun({ result, settings: updated })
       onNotifyRef.current(resultMessage(result), result.outcome === 'Success' ? 'info' : 'error')
     } else {
       onNotifyRef.current(
@@ -206,7 +211,19 @@ export function CrmSimulationControl({ onInquiryCreated, onNotify }: CrmSimulati
           {pending === 'run' && <Spinner size={16} />}
           Run demo inquiry
         </button>
+        {lastRun && (
+          <button
+            type="button"
+            className="dev-crm-log"
+            onClick={() => setLogOpen(true)}
+            disabled={busy}
+          >
+            View sync log
+          </button>
+        )}
       </div>
+
+      <CrmSyncLogModal run={logOpen ? lastRun : null} onClose={() => setLogOpen(false)} />
     </aside>
   )
 }

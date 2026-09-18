@@ -10,6 +10,12 @@ island — over a local SQLite file, with no external services to stand up.
 Built as the ".NET / C# Web Developer" technical assessment
 ([full brief](option-1-course-inquiry-dashboard.md)).
 
+## Live deployment
+
+The web service is currently up at
+**[https://merrithew-courses-web-app.on-forge.com/dashboard](https://merrithew-courses-web-app.on-forge.com/dashboard)**,
+running on the deployment VPS described in [Run in Docker](#run-in-docker).
+
 ## Requirements
 
 - **.NET 10 SDK** — the solution targets `net10.0` and [`global.json`](global.json)

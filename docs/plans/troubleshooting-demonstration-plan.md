@@ -1,6 +1,7 @@
 # Troubleshooting Demonstration — Live, Reproducible Proof of the Written Answer
 
-- **Status:** planned — not yet implemented
+- **Status:** implemented (September 17, 2026) — see [CHANGELOG](../CHANGELOG.md) and
+  the [missing-inquiry runbook §7](../runbooks/missing-inquiry.md) walkthrough
 - **Scope:** make the assessment's written **Troubleshooting** answer reproducible against
   the running app, so an assessor can watch each claim demonstrated in the live dashboard
 - **Delivery decisions:** demo owns OBS-101 **GAP-6** and builds on the rest of OBS-101;

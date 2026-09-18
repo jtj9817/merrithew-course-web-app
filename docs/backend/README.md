@@ -166,6 +166,36 @@ disabled, the endpoints are simply absent. This changes none of the accepted
 ADR-0007 delivery policy — sync remains bounded and best-effort, with no durable
 outbox.
 
+### Troubleshooting-demonstration tools (development-only)
+
+Three surfaces make the [missing-inquiry runbook](../runbooks/missing-inquiry.md)
+reproducible against the running app. Each is gated exactly like the tools above —
+mapped in Development or with its own `DevTools:*` flag, absent otherwise — and
+nothing here logs visitor data.
+
+- **`missing-inquiries` scenario** — a 26-row dataset
+  ([`ScenarioCatalog`](../../backend/DevTools/ScenarioCatalog.cs)): a worked
+  backlog plus recent `New` rows a non-`All` filter hides, one resubmitted
+  duplicate email, and enough volume to push older rows to page 2. Seeded through
+  the same `/api/dev/scenarios/{name}` path as every scenario.
+- **Intake fault switch** —
+  [`/api/dev/intake-fault`](../../backend/DevTools/IntakeFaultEndpoints.cs)
+  (`DevTools:IntakeFault`): `GET /` (armed count + total injected), `PUT /`
+  (validated `armCount`, 0–100; invalid bodies are `400` problems). Arming makes
+  [`InquiryService.CreateAsync`](../../backend/Services/InquiryService.cs) throw
+  before the write, so a real `POST /api/inquiries` returns a genuine **500 with a
+  `traceId` and stores no row** — the "backend failure → never stored" branch. The
+  [`IntakeFaultRuntime`](../../backend/DevTools/IntakeFaultRuntime.cs) is
+  registered in every environment but is inert until armed, and only the dev-gated
+  endpoint can arm it, so an unmapped production runtime is permanently inert.
+- **Reconciliation reports** —
+  [`/api/dev/reconciliation`](../../backend/DevTools/ReconciliationEndpoints.cs)
+  (`DevTools:Reconciliation`): read-only `GET /` (count-by-status incl. zeros,
+  `last7DaysCount`, duplicate-email groups) and `GET /by-email?email=…` (the
+  stored-but-hidden vs never-stored tiebreaker). All parameterized **EF Core LINQ**
+  over the live store — no raw SQL — mirroring the SQLite report file
+  [`database/reconciliation.sqlite.sql`](../../database/reconciliation.sqlite.sql).
+
 ## Related
 
 - [Frontend docs](../frontend/README.md) · [Domain model](../domain/course-inquiry.md)

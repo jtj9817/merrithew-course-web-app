@@ -157,6 +157,12 @@ What already exists and was verified during the audit:
   the three report queries, the log queries to run (by correlation ID /
   outcome / EventId), the `/health` check, and the "stored-but-hidden vs
   never-stored" decision tree.
+* **Follow-on (delivered)**: the troubleshooting demonstration builds on this
+  runbook to make every branch *reproducible* against the running app — a live
+  `/api/dev/reconciliation` endpoint (LINQ) and a runnable
+  `database/reconciliation.sqlite.sql`, plus an in-app DEV walkthrough (§7 of the
+  runbook). See
+  [troubleshooting-demonstration-plan.md](../plans/troubleshooting-demonstration-plan.md).
 
 ### [GAP-7] Filtered state is only visible inside the select control
 

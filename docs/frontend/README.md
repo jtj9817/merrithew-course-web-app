@@ -114,16 +114,16 @@ HTML. `OUTCOME_MESSAGES` holds the fixed user-facing strings.
 
 ## Development-only tools
 
-Two dashed-border controls render above the toolbar — **only when the Razor
-shell confirms their endpoints are mapped** (the shell sets
-`window.__scenarioTools` / `window.__crmSimulationTools` from
-`DevToolsOptions`, so UI and API surface cannot drift). Both are absent in a
-production-shaped host and inert in the test harness: when a flag is off, the
-component renders nothing and issues no mount-time request.
+Four dashed-border controls render above the toolbar — **only when the Razor
+shell confirms their endpoints are mapped** (the shell sets `window.__scenarioTools`
+/ `window.__crmSimulationTools` / `window.__intakeFaultTools` /
+`window.__reconciliationTools` from `DevToolsOptions`, so UI and API surface cannot
+drift). All are absent in a production-shaped host and inert in the test harness:
+when a flag is off, the component renders nothing and issues no mount-time request.
 
 - **Scenario switcher** ([`ScenarioSwitcher.tsx`](../../frontend/src/components/ScenarioSwitcher.tsx)):
   seeds or clears the inquiry store through `/api/dev/scenarios` to demo list
-  states (empty / full / paging).
+  states (empty / full / paging / the `missing-inquiries` troubleshooting set).
 - **CRM delivery demonstrator**
   ([`CrmSimulationControl.tsx`](../../frontend/src/components/CrmSimulationControl.tsx)):
   picks a runtime CRM behavior (`Success`, `TransientThenSuccess`,
@@ -135,9 +135,22 @@ component renders nothing and issues no mount-time request.
   names the outcome and attempt count, and on failure states that the stored
   inquiry is unaffected — the persist-first rule, visible in the UI. Demo
   inquiries appear in the queue like any visitor submission.
+- **Intake fault demonstrator**
+  ([`IntakeFaultControl.tsx`](../../frontend/src/components/IntakeFaultControl.tsx)):
+  **Arm one failure and submit** arms `/api/dev/intake-fault` for the next create,
+  then sends one real inquiry that fails *before* any write. The status line
+  reports the genuine **500 and its `traceId`**, and that **no row was stored** —
+  the "backend failure → never stored" branch of the troubleshooting answer, made
+  visible (`lib/intakeFault.ts` shape-checks every response).
+- **Reconciliation readout**
+  ([`ReconciliationPanel.tsx`](../../frontend/src/components/ReconciliationPanel.tsx)):
+  a read-only view of `/api/dev/reconciliation` — count-by-status, the last-7-days
+  total, and any duplicate-email groups — so the runbook's reconciliation step is
+  visible in the website. It refetches whenever the queue data changes.
 
-Both tools share one refresh callback: after data changes, the island resets to
-the default filter/sort view and refetches.
+The scenario, CRM, and intake-fault tools share one refresh callback: after data
+changes, the island resets to the default filter/sort view and refetches (which
+also refreshes the reconciliation readout).
 
 ## Related
 

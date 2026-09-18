@@ -102,7 +102,22 @@ field *names*, routes, and status codes only.
 The runtime database is SQLite (default `backend/inquiries.db`, overridable by
 `ConnectionStrings__DefaultConnection`). These are SQLite equivalents of the
 report queries shipped in [`database/database.sql`](../../database/database.sql)
-(SQL Server dialect, C8):
+(SQL Server dialect, C8).
+
+Three ways to run them, all reading the same live store and agreeing on the
+numbers:
+
+- **Static file** — the four reports below, ready to run:
+  [`database/reconciliation.sqlite.sql`](../../database/reconciliation.sqlite.sql)
+  via `sqlite3 backend/inquiries.db < database/reconciliation.sqlite.sql`.
+- **Live dev endpoint** — `GET /api/dev/reconciliation` (summary JSON:
+  count-by-status incl. zeros, `last7DaysCount`, `duplicateEmailGroups`) and
+  `GET /api/dev/reconciliation/by-email?email=…` (the direct lookup). The same
+  queries as parameterized EF Core LINQ; dev-gated (see §7).
+- **In the website** — the DEV **Reconciliation** readout on `/dashboard` shows
+  the counts and last-7-days total live during the walkthrough (§7).
+
+Ad-hoc against the file directly:
 
 ```bash
 sqlite3 /path/to/inquiries.db
@@ -171,3 +186,68 @@ Lead with impact: "we've confirmed N inquiries from the last 7 days are stored
 and none are lost; they were hidden by a status filter" versus "we're still
 confirming whether they reached our system." State what is confirmed, what is
 open, and the next update time.
+
+## 7. Live walkthrough (in-app DEV tools)
+
+Every branch of the Troubleshooting answer can be *demonstrated* against the
+running app, not just described. In Development (or with the matching
+`DevTools:*` flag set), `/dashboard` shows a DEV bar with four controls:
+**Simulate scenario**, **CRM delivery**, **Intake fault**, and
+**Reconciliation**. Each step below lists the written-answers claim it proves →
+the live action → the expected evidence.
+
+**Setup.** In the DEV bar, Simulate scenario → **missing-inquiries** → Apply.
+This seeds 26 rows: a worked backlog (Contacted/Pending/Registered/Closed), a
+few recent `New` rows, one resubmitted **duplicate email**
+(`hannah.becker@example.com`, two rows), and enough volume to push older rows to
+page 2.
+
+1. **Stored but hidden by a status filter** (the "usual bug", C4). Set the
+   status filter to anything other than **All** (e.g. *Registered*). The recent
+   `New` rows vanish, but the queue still looks full, and the
+   **"Showing N of M inquiries · filtered by …"** indicator names the cause with
+   a one-click **Clear filter**. Clear it → the `New` rows reappear.
+   *Evidence:* the filtered-state indicator; the row returns on clear.
+
+2. **On another page** (paged snapshot, C4). With the filter cleared, page 2
+   holds the oldest rows. An inquiry a staffer "can't find" on page 1 is simply
+   further down. *Evidence:* the row is present on page 2.
+
+3. **Reconcile stored vs visible** (C5, submissions-vs-rows). Read the DEV
+   **Reconciliation** readout (or `GET /api/dev/reconciliation`, or the
+   `.sql` file in §4). Count-by-status matches the dashboard; `last7DaysCount`
+   confirms recent submissions landed; the duplicate-email group surfaces the
+   resubmit. *Evidence:* counts agree; `hannah.becker@example.com ×2`.
+
+4. **A CRM failure can never cause a missing inquiry** (C5). In **CRM delivery**
+   choose `PermanentFailure` (or `Timeout`) → **Run demo inquiry**. The
+   submission returns **201**, the row appears in the queue, and only the CRM
+   sync fails. *Evidence:* 201 + present row; CRM outcome logs (EventIds 10–14,
+   1–2) show the isolated failure; the row is unaffected. This rules out a whole
+   layer.
+
+5. **Never stored — validation rejected (400)** (never-stored, prevention). Send
+   a bad `POST /api/inquiries` (e.g. via Swagger, an invalid email). *Evidence:*
+   **400** + `validationRejected` log (EventId 23, field keys only) +
+   `intake_requests{outcome=validationRejected}` + a `traceId` on the response.
+
+6. **Never stored — genuine backend/DB failure (5xx)** (never-stored). In
+   **Intake fault** click **Arm one failure and submit**: it arms the next
+   create to fail *before* the write, then submits one real inquiry.
+   *Evidence:* **500** with a `traceId`; the sanitized
+   `Unhandled exception of type {ErrorType}` log (`ErrorType` =
+   `IntakeFaultInjectedException`); `intake_requests{outcome=serverError}`; the
+   request-outcome entry (EventId 22, status 500); and the row is **absent** —
+   the Reconciliation total does not move. This is the faithful "backend failure
+   → never stored" case.
+
+Tie a staff report to its request with the shared correlation `traceId` (§3): a
+visitor who saw an error page can quote (or the access log can show) the
+`traceId`, which appears on the 400/500 response and in every log entry for that
+request.
+
+> All DEV controls are opt-in and dev-gated exactly like the existing scenario
+> and CRM tools — mapped only in Development or with the matching `DevTools:*`
+> flag, never in production. The intake fault switch is inert until armed, and
+> only the dev endpoint can arm it. See the [backend](../backend/README.md) and
+> [frontend](../frontend/README.md) READMEs for the endpoints, flags, and gating.

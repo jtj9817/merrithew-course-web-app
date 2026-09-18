@@ -7,6 +7,34 @@ tagged (it's a single assessment deliverable), so changes are grouped under
 
 ## [Unreleased]
 
+### Added — troubleshooting demonstration (September 17, 2026)
+
+- **Reproducible "missing inquiry" demonstration**: the written Troubleshooting
+  answer can now be demonstrated live in the dashboard, branch by branch, via the
+  [missing-inquiry runbook](runbooks/missing-inquiry.md) walkthrough. Delivers
+  what OBS-101 did not stage:
+- **`missing-inquiries` scenario**: a 26-row dataset (worked backlog + recent
+  `New` rows a non-`All` filter hides, one resubmitted duplicate email, and
+  page-2 volume), seeded through the existing `/api/dev/scenarios` path.
+- **Intake fault injection** (development-only): `/api/dev/intake-fault`
+  (`Development`, or `DevTools:IntakeFault=true`) arms the next create(s) to fail
+  **before any write**, so a real `POST /api/inquiries` returns a genuine `500`
+  with a `traceId` and stores no row — the "backend failure → never stored" case.
+  Inert until armed; only the dev endpoint can arm it. A dashboard **Intake
+  fault** control drives the arm-and-submit demonstration.
+- **Reconciliation reports** (development-only): read-only `/api/dev/reconciliation`
+  (`Development`, or `DevTools:Reconciliation=true`) returns count-by-status
+  (incl. zeros), a last-7-days total, and duplicate-email groups, plus
+  `by-email?email=…` for the stored-but-hidden vs never-stored tiebreaker — all
+  parameterized EF Core LINQ. Mirrored by the runnable SQLite report file
+  `database/reconciliation.sqlite.sql` and a dashboard **Reconciliation** readout.
+- **Automated coverage**: UT-FAULT-001..006 (fault switch semantics, thread
+  safety), IT-FAULT-001..005 and IT-RECON-001..003 (endpoint contracts, armed
+  `500` with no row stored + serverError metric/log/`traceId`, reconciliation
+  correctness, gating outside Development), and frontend component tests for the
+  intake-fault and reconciliation controls — see the
+  [plan](plans/troubleshooting-demonstration-plan.md).
+
 ### Added — runtime CRM simulation controls (September 17, 2026)
 
 - **Selectable simulated CRM outcome at runtime**: `CrmSimulation` configuration

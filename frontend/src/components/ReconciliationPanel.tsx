@@ -26,9 +26,16 @@ export function ReconciliationPanel({ reloadToken }: ReconciliationPanelProps) {
       return
     }
     const controller = new AbortController()
+    // A superseded request settles after the replacement effect has set loading
+    // again (its abort surfaces as null, not a rejection), so only the current
+    // run may touch state or the spinner never survives a token change.
+    let stale = false
     setLoading(true)
     void (async () => {
       const loaded = await fetchReconciliation(controller.signal)
+      if (stale) {
+        return
+      }
       if (loaded) {
         setReport(loaded)
         setStatus('')
@@ -38,6 +45,7 @@ export function ReconciliationPanel({ reloadToken }: ReconciliationPanelProps) {
       setLoading(false)
     })()
     return () => {
+      stale = true
       controller.abort()
     }
   }, [enabled, reloadToken])

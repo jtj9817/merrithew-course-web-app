@@ -23,7 +23,7 @@ const OUTCOME_LABELS: Record<CrmSyncResult['outcome'], string> = {
 }
 
 /**
- * Dev-only modal that shows the reconstructed CRM sync trail for one demo run —
+ * Dev-only modal that shows the reconstructed CRM sync trail for one demo run,
  * the one dev control whose outcome is a multi-attempt sequence worth reading
  * line by line. Built on the same M3 dialog conventions as the detail panel:
  * role="dialog", aria-modal, focus moves in on open and returns to the opener on
@@ -32,6 +32,10 @@ const OUTCOME_LABELS: Record<CrmSyncResult['outcome'], string> = {
 export function CrmSyncLogModal({ run, onClose }: CrmSyncLogModalProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const openerRef = useRef<HTMLElement | null>(null)
+  // The close callback is an unstable inline arrow at the call site; read it
+  // through a ref so the open/close effect below stays keyed on `isOpen`.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   const isOpen = run !== null
 
   useEffect(() => {
@@ -42,7 +46,29 @@ export function CrmSyncLogModal({ run, onClose }: CrmSyncLogModalProps) {
     containerRef.current?.focus()
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    // The container keydown handler misses keys once focus has escaped the
+    // dialog (Firefox focuses body after clicking non-interactive log text),
+    // so recapture Escape/Tab at the document level, in capture phase before
+    // the escaped focus target can act on them.
+    const recapture = (event: KeyboardEvent) => {
+      const container = containerRef.current
+      if (!container || container.contains(document.activeElement)) {
+        return
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onCloseRef.current()
+      } else if (event.key === 'Tab') {
+        event.preventDefault()
+        const focusable = container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )
+        ;(focusable[0] ?? container).focus()
+      }
+    }
+    document.addEventListener('keydown', recapture, true)
     return () => {
+      document.removeEventListener('keydown', recapture, true)
       document.body.style.overflow = previousOverflow
       const opener = openerRef.current
       if (opener?.isConnected) {

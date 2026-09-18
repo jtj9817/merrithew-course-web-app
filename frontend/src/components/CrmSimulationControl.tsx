@@ -26,11 +26,11 @@ function resultMessage(result: CrmSyncResult): string {
     case 'Success':
       return `Inquiry #${result.inquiryId} created. CRM sync succeeded after ${attemptLabel}.`
     case 'Failed':
-      return `Inquiry #${result.inquiryId} created and kept. CRM sync failed after ${attemptLabel} — the stored inquiry is unaffected.`
+      return `Inquiry #${result.inquiryId} created and kept. CRM sync failed after ${attemptLabel}; the stored inquiry is unaffected.`
     case 'TimedOut':
-      return `Inquiry #${result.inquiryId} created and kept. CRM sync timed out after ${attemptLabel} — the stored inquiry is unaffected.`
+      return `Inquiry #${result.inquiryId} created and kept. CRM sync timed out after ${attemptLabel}; the stored inquiry is unaffected.`
     case 'Cancelled':
-      return `Inquiry #${result.inquiryId} created and kept. CRM sync was cancelled after ${attemptLabel} — the stored inquiry is unaffected.`
+      return `Inquiry #${result.inquiryId} created and kept. CRM sync was cancelled after ${attemptLabel}; the stored inquiry is unaffected.`
   }
 }
 

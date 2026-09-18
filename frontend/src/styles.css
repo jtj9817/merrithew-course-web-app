@@ -1,14 +1,14 @@
 /* ── Merrithew Brand Identity & Material Design 3 Design Tokens ───────────
    Brand Source Colors:
-   - Primary:   #AC2724 (Brick Red — primary brand color)
-   - Secondary: #583E24 (Dark Brown — secondary accent)
-   - Tertiary:  #3E4524 (Dark Olive — tertiary accent)
+   - Primary:   #AC2724 (Brick Red, primary brand color)
+   - Secondary: #583E24 (Dark Brown, secondary accent)
+   - Tertiary:  #3E4524 (Dark Olive, tertiary accent)
    - Neutrals:  #E8E8E8 / #C1C6C9 (warm-gray surface & container neutrals)
 
    Material Design 3 Token Hierarchy:
    All color roles, typography, shape, elevation, motion, and state layers
    are declared as CSS custom properties on :root. Component rules consume
-   these tokens exclusively — no ad-hoc hex values, px font sizes, or raw shadows.
+   these tokens exclusively; no ad-hoc hex values, px font sizes, or raw shadows.
    Every color combination has been computationally verified for WCAG 2.1 AA
    contrast (normal text ≥ 4.5:1, large text ≥ 3:1, non-text UI ≥ 3:1).
 ─────────────────────────────────────────────────────────────────────────── */
@@ -179,7 +179,7 @@
   --md-sys-shape-corner-extra-large: 28px;
   --md-sys-shape-corner-full: 9999px;
 
-  /* ── M3 Elevation Tokens (Shadow Levels 1–3) ───────────────────────────── */
+  /* ── M3 Elevation Tokens (Shadow Levels 1-3) ───────────────────────────── */
   --md-sys-elevation-0: none;
   --md-sys-elevation-1: 0px 1px 3px 1px rgba(37, 32, 27, 0.12), 0px 1px 2px 0px rgba(37, 32, 27, 0.20);
   --md-sys-elevation-2: 0px 2px 6px 2px rgba(37, 32, 27, 0.12), 0px 1px 2px 0px rgba(37, 32, 27, 0.20);
@@ -1827,7 +1827,7 @@ noscript a {
 
 /* Reduced motion: the global rule freezes the animations to their final frame,
    which would hide the sliding indicator. Restore a legible static state so the
-   "busy" signal survives — meaning is still carried by the live-region text. */
+   "busy" signal survives; meaning is still carried by the live-region text. */
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     border-color: currentColor;

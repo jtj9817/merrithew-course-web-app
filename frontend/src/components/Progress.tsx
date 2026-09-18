@@ -5,7 +5,7 @@
  *
  * The Spinner is decorative by default (aria-hidden) because it sits beside a
  * text label that a live region already announces; pass a `label` only when the
- * spinner is the sole indicator. The LinearProgress is the announced one — it
+ * spinner is the sole indicator. The LinearProgress is the announced one: it
  * exposes role="progressbar" with the action name.
  */
 

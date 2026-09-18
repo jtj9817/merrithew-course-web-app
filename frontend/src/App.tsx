@@ -108,7 +108,7 @@ export default function App() {
     setPhase(next)
   }, [])
 
-  /** C7: every panel close — user-initiated or programmatic — returns focus to its opener. */
+  /** C7: every panel close, user-initiated or programmatic, returns focus to its opener. */
   const focusDetailOpener = useCallback((state: DetailState) => {
     if (state.kind !== 'closed') {
       if (state.opener.isConnected) {

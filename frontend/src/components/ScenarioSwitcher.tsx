@@ -20,7 +20,7 @@ type PendingAction = 'apply' | 'clear' | null
 /**
  * Dev-only control that drives the inquiry store into a known state through
  * /api/dev/scenarios, with a Clear action to reverse it. It renders nothing
- * unless the server shell set `window.__scenarioTools` — so it is absent in
+ * unless the server shell set `window.__scenarioTools`, so it is absent in
  * production and inert in the test harness (no mount-time request is made when
  * the flag is off, keeping the fetch double's queue intact).
  *
@@ -64,7 +64,7 @@ export function ScenarioSwitcher({ onChanged, onNotify }: ScenarioSwitcherProps)
     const result = await applyScenario(selected)
     if (result) {
       onChangedRef.current()
-      onNotifyRef.current(`Loaded ${result.scenario} — ${result.totalCount} inquiries.`, 'info')
+      onNotifyRef.current(`Loaded ${result.scenario}: ${result.totalCount} inquiries.`, 'info')
     } else {
       onNotifyRef.current('Could not load the scenario. Is scenario seeding still enabled?', 'error')
     }

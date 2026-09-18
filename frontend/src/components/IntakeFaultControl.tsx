@@ -20,7 +20,7 @@ type PendingAction = 'submit' | 'disarm' | null
 /**
  * Dev-only intake fault demonstrator: arm the next create to fail before any write,
  * then run one real inquiry through the production POST endpoint and observe a
- * genuine 500 with the sanitized traceId — and no stored row. This stages the
+ * genuine 500 with the sanitized traceId, and no stored row. This stages the
  * "backend/DB failure → never stored" branch of the troubleshooting answer. Renders
  * nothing unless the shell set window.__intakeFaultTools (so it is absent in
  * production and inert in the test harness, with no mount-time request when off).
@@ -73,12 +73,12 @@ export function IntakeFaultControl({ onChanged, onNotify }: IntakeFaultControlPr
     } else if (result.status >= 500) {
       const trace = result.traceId ? ` (traceId ${result.traceId})` : ''
       onNotifyRef.current(
-        `Submission failed with HTTP ${result.status}${trace}. No row was stored — the genuine backend-failure “never stored” case. The queue below does not contain it.`,
+        `Submission failed with HTTP ${result.status}${trace}. No row was stored; the genuine backend-failure “never stored” case. The queue below does not contain it.`,
         'error',
       )
     } else if (result.status === 201) {
       onNotifyRef.current(
-        'Submission unexpectedly succeeded (HTTP 201) and a row was stored — the armed fault was already consumed. Arm again to retry.',
+        'Submission unexpectedly succeeded (HTTP 201) and a row was stored; the armed fault was already consumed. Arm again to retry.',
         'error',
       )
     } else {

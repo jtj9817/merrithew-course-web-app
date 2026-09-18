@@ -194,7 +194,7 @@ export interface CrmSyncLogEntry {
   message: string
   /** Log level, matching the server's LoggerMessage severity. */
   level: 'info' | 'warning'
-  /** The server EventId this line corresponds to (10–14). */
+  /** The server EventId this line corresponds to (10-14). */
   eventId: number
 }
 
@@ -205,7 +205,7 @@ export interface CrmSyncLogEntry {
  * retried attempts are transient HttpRequestExceptions (or per-attempt timeouts
  * in Timeout mode), and the terminal line carries InvalidOperationException for a
  * permanent rejection or HttpRequestException for exhausted transients. Each line
- * mirrors a server LoggerMessage template (EventId 10–14) so the readout matches
+ * mirrors a server LoggerMessage template (EventId 10-14) so the readout matches
  * the application log; the log itself remains the authoritative record.
  */
 export function buildCrmSyncLog(result: CrmSyncResult): CrmSyncLogEntry[] {

@@ -93,7 +93,7 @@ All administrative workflows—triaging leads, inspecting details, filtering, so
 ### 2.4 High-Contrast Visible Focus Indicators (WCAG 2.4.7 - Level AA)
 - Global `:focus-visible` CSS rules enforce a 3px solid outline with 2px offset (`var(--md-sys-color-primary)`), exceeding the 3:1 contrast requirement against adjacent surfaces.
 - Table rows provide `:focus-within` background highlighting.
-- High-contrast colorblind mode elevates the focus indicator to a prominent 3px outline with a 5px semi-transparent outer glow (`rgba(0, 51, 102, 0.25)`).
+- High-contrast colorblind mode elevates the focus indicator to a prominent 3px outline with a 5px semi-transparent outer glow (`rgba(44, 74, 110, 0.30)`, derived from the cobalt `#2C4A6E` colorblind chrome accent).
 
 ---
 
@@ -134,7 +134,7 @@ Visual updates occurring without page reloads are invisible to screen readers un
   - `Closed`: Thin border with reduced contrast + Slash icon (⊘)
 
 ### 3.4 Responsive Reflow, Contrast & Reduced Motion (WCAG 1.4.3, 1.4.4, 1.4.10, 2.3.3)
-- **Contrast Ratios**: All typography meets or exceeds WCAG AA 4.5:1 contrast against surface backgrounds (e.g., text `#1D1B20` on `#FDF8F5` achieves > 11:1).
+- **Contrast Ratios**: All typography meets or exceeds WCAG AA 4.5:1 contrast against surface backgrounds (e.g., dark body text on the `#E8E8E8` light neutral surface achieves > 11:1).
 - **Responsive Reflow down to 375px**: Layouts rely on relative units (`rem`, `%`, flexbox, CSS grid), supporting 200% zoom and 375px mobile viewports without horizontal scrolling or content clipping.
 - **Reduced Motion**: System preferences (`@media (prefers-reduced-motion: reduce)`) suppress non-essential animations and instant-skip transitions.
 

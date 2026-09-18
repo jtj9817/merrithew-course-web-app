@@ -35,6 +35,18 @@ public sealed class DashboardModel : PageModel
     /// </summary>
     public bool CrmSimulationToolsEnabled { get; private set; }
 
+    /// <summary>
+    /// True when the dev intake fault-injection controls are enabled; the shell then
+    /// exposes the flag the React island reads to render its fault demonstrator.
+    /// </summary>
+    public bool IntakeFaultToolsEnabled { get; private set; }
+
+    /// <summary>
+    /// True when the dev reconciliation reports are enabled; the shell then exposes
+    /// the flag the React island reads to render its reconciliation readout.
+    /// </summary>
+    public bool ReconciliationToolsEnabled { get; private set; }
+
     public void OnGet()
     {
         var links = ViteManifest.Resolve(environment.ContentRootPath);
@@ -42,5 +54,7 @@ public sealed class DashboardModel : PageModel
         Stylesheets = links.Stylesheets;
         ScenarioToolsEnabled = DevToolsOptions.ScenarioSeedingEnabled(environment, configuration);
         CrmSimulationToolsEnabled = DevToolsOptions.CrmSimulationEnabled(environment, configuration);
+        IntakeFaultToolsEnabled = DevToolsOptions.IntakeFaultEnabled(environment, configuration);
+        ReconciliationToolsEnabled = DevToolsOptions.ReconciliationEnabled(environment, configuration);
     }
 }

@@ -53,6 +53,14 @@
 {
     <script>window.__crmSimulationTools = true;</script>
 }
+@if (Model.IntakeFaultToolsEnabled)
+{
+    <script>window.__intakeFaultTools = true;</script>
+}
+@if (Model.ReconciliationToolsEnabled)
+{
+    <script>window.__reconciliationTools = true;</script>
+}
 @if (Model.EntryScript is not null)
 {
     <script type="module" src="/app/@Model.EntryScript"></script>

@@ -1671,6 +1671,75 @@ noscript a {
   }
 }
 
+.dev-fault-state {
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.dev-recon {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-small);
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+}
+
+.dev-recon-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.dev-recon-heading strong {
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-title-small-size);
+}
+
+.dev-recon-summary {
+  margin-left: auto;
+  color: var(--md-sys-color-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.dev-recon-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dev-recon-counts li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-surface-container-lowest);
+}
+
+.dev-recon-status {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.dev-recon-count {
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.dev-recon-duplicates {
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+}
+
 /* ── Material Design 3 Switch & Toggle Component ────────────────────────── */
 
 .m3-toggle-wrapper {

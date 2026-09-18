@@ -5,8 +5,10 @@ import { CrmSimulationControl } from './components/CrmSimulationControl'
 import { DetailPanel } from './components/DetailPanel'
 import { FilteredStateIndicator } from './components/FilteredStateIndicator'
 import { InquiryTable } from './components/InquiryTable'
+import { IntakeFaultControl } from './components/IntakeFaultControl'
 import { LiveRegions, type ToastNotification } from './components/LiveRegions'
 import { Pagination } from './components/Pagination'
+import { ReconciliationPanel } from './components/ReconciliationPanel'
 import { ScenarioSwitcher } from './components/ScenarioSwitcher'
 import { StatusBadge } from './components/StatusBadge'
 import { Toolbar } from './components/Toolbar'
@@ -332,6 +334,8 @@ export default function App() {
         <div className="dev-tools">
           <ScenarioSwitcher onChanged={handleDevelopmentDataChanged} />
           <CrmSimulationControl onInquiryCreated={handleDevelopmentDataChanged} />
+          <IntakeFaultControl onChanged={handleDevelopmentDataChanged} />
+          <ReconciliationPanel reloadToken={refreshKey} />
         </div>
 
         <Toolbar

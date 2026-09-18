@@ -73,6 +73,32 @@ dotnet ef migrations add <Name> --project backend
 dotnet ef database update --project backend
 ```
 
+### Run in Docker
+
+[Dockerfile](Dockerfile) is a self-contained multi-stage build — it compiles
+the React island (Node 22 + pnpm) and publishes the ASP.NET Core app inside
+the image — so this path needs no local .NET or Node toolchain, only Docker:
+
+```bash
+docker compose up -d --build
+```
+
+[docker-compose.yml](docker-compose.yml) publishes the app at
+**`http://localhost:8088`** (container port 8080). The binding is deliberately
+loopback-only: on the deployment VPS, a Forge-managed nginx site
+reverse-proxies to `127.0.0.1:8088` and terminates TLS. The container runs in
+`Production`, so `/swagger` is not served there — exercise the API endpoints
+directly. SQLite lives on the named `inquiries-data` volume
+(`/data/inquiries.db` in the container), so inquiries survive redeploys;
+startup migrations apply as usual.
+
+The dev scenario-seeding endpoints (`/api/dev/scenarios`) ship disabled so
+they never run enabled on the VPS. Flip them on for a local demo with:
+
+```bash
+DEV_SCENARIO_SEEDING=true docker compose up -d
+```
+
 ## API
 
 Base route `/api/inquiries`

@@ -1,176 +1,198 @@
 # Written Answers
 
-Concise, reasoning-first answers to the four assessment questions. They describe
-this codebase as built; the "why" behind most choices is recorded in the
+Reasoning-first answers to the four assessment questions, describing the codebase
+as built. The deeper "why" behind each choice is recorded in the
 [ADRs](docs/architecture/adr/) and [boundary contracts](docs/architecture/contracts.md).
 
 ---
 
 ## Troubleshooting
 
-*Staff report that some inquiries submitted through the website don't appear in the
-admin list.* I'd work the submission path end to end — visitor form → API validation
-→ service → **database commit** → CRM sync
-([submit flow](docs/architecture/flow--flow-submit.html)) — because a "missing"
-inquiry was either never stored, stored but hidden by the view, or stored somewhere
-other than the list is reading.
+**Problem.** A staff member reports that some inquiries submitted through the
+website do not appear in the admin list. It is not yet known whether those
+inquiries were lost or merely not displayed.
 
-**A key fact that narrows this fast:** the inquiry is committed to the database
-*before* the CRM sync, and a CRM failure can never prevent or undo storage
-([C5](docs/architecture/contracts.md#c5-commit-boundary-cancellation-and-crm-delivery)).
-So a CRM/integration problem is almost never the cause of a *missing* inquiry — it
-would only affect the downstream CRM. That rules out a whole layer early.
+**Assumptions.**
 
-**What I'd check, by layer:**
-
-- **Frontend / display first (cheapest).** Is a **status filter** active? The list
-  defaults to all statuses but staff often filter — a `New` inquiry won't show under
-  a `Registered` filter. Also check paging (it may be on another page) and force a
-  refresh, since the list is a paged snapshot, not live
-  ([C4](docs/architecture/contracts.md#c4-listing-pagination-and-concurrent-triage)).
-- **The submission itself (client + API boundary).** Reproduce a submit with the
-  browser network panel open. Did `POST /api/inquiries` return **`201`**, **`400`**,
-  or **`5xx`/nothing**? A `400` means validation rejected it (bad email format,
-  missing required field, over-length) — it was never stored, and the form should be
-  surfacing that error. A `5xx` or no response points at the backend/database.
-- **Backend logs.** Check the app's `ILogger` output: every `/api/inquiries`
-  request logs one terminal outcome entry (status code + outcome, EventIds
-  20–22), rejected submissions log `validationRejected` with the failing field
-  names (EventId 23), stored inquiries log `Inquiry {id} created` (EventId 3),
-  and a CRM failure after commit logs an isolated outcome warning — all for one
-  request sharing a `correlationId` you can quote from any 400/500 response's
-  `traceId` extension ([runbook](docs/runbooks/missing-inquiry.md)). The
-  sanitized unhandled-exception entries (`ErrorType`) from the error middleware
-  ([Program.cs](backend/Program.cs)) cover the 5xx path.
-- **Database / configuration.** Confirm the app is pointed at the expected store —
-  a wrong `ConnectionStrings__DefaultConnection` (or a different `inquiries.db` file
-  per environment) makes rows "vanish" because the list reads a different database.
-  Confirm migrations applied (startup is fatal if they didn't).
-
-**SQL I'd run** (the queries shipped in [`database/database.sql`](database/database.sql)):
-
-- **Count by status** — reconcile the totals against what staff see; a large `New`
-  count under an active filter usually *is* the "bug".
-- **Last 7 days** — confirm recent submissions actually landed and when.
-- **Duplicate email** — if a visitor resubmitted after a timeout, intake isn't
-  idempotent, so you may find near-duplicates rather than a missing row
+- The intake path is `visitor form → POST /api/inquiries → validation →
+  InquiryService → database commit → best-effort CRM sync`
+  ([submit flow](docs/architecture/flow--flow-submit.html)); the dashboard list
+  reads the same database through a paged `GET /api/inquiries` with an optional
+  status filter.
+- The system commits **first** and syncs to the CRM **second**: a CRM failure is
+  caught after the commit and can never block or undo storage
   ([C5](docs/architecture/contracts.md#c5-commit-boundary-cancellation-and-crm-delivery)).
-- A direct lookup by the reported email/name to settle *stored-but-hidden* vs.
-  *never-stored*: `SELECT * FROM CourseInquiries WHERE Email = @email;`
+  The CRM is therefore an unlikely cause of a *missing* inquiry, which rules out
+  the integration layer early.
+- "Missing" can only mean one of three things: the inquiry was **never stored**
+  (the request failed or was rejected), is **stored but hidden** (active filter,
+  paging), or is **stored where the list isn't reading** (wrong
+  database/configuration).
 
-**Communicating to non-technical stakeholders:** lead with impact, not mechanism —
-"we've confirmed *N* inquiries from the last 7 days are stored and none are lost;
-they were hidden by a status filter" vs. "we're still confirming whether they
-reached our system." State what's confirmed, what's still open, and when the next
-update comes; avoid jargon; and if data integrity is in question, say so plainly.
+With that mental model, I'd work the path from the cheapest end, collecting
+evidence at each step before moving a layer deeper.
 
-**Preventing recurrence:** an end-to-end test covering submit → list (covered by
-`IT-API`/`IT-APP` integration tests, plus observability coverage of the submit →
-log → list chain — a real visitor form remains future work, permitted by Part 3);
-monitoring/alerting fed by the implemented `/health` readiness endpoint and the
-`CourseInquiryDashboard` meter counters (`intake_requests` by outcome, CRM
-outcomes and retries); the active filter state is now obvious in the UI ("Showing
-N of M · filtered by X" with a one-click Clear filter) so a filtered view isn't
-mistaken for missing data; validation rejections and server errors are logged
-with a correlation ID, so the "never stored" branch is provable after the fact;
-and a periodic reconciliation using the count-by-status / last-7-days reports
-([runbook with runnable SQLite queries](docs/runbooks/missing-inquiry.md)).
-Surfacing validation errors on the submitting form itself stays future work
-until a public form exists.
+**1. Scope the report.** One visitor or several? Which timeframe? Get a concrete
+example (email + approximate submit time). A one-off points at validation or a
+transient error; a cluster points at configuration or the backend.
+
+**2. Rule out the display layer (cheapest, most common).** Is a **status
+filter** active? A `New` inquiry will not appear under a `Registered` filter.
+Also check paging (the row may simply be on another page) and force a refresh,
+since the list is a paged snapshot, not a live view
+([C4](docs/architecture/contracts.md#c4-listing-pagination-and-concurrent-triage)).
+
+**3. Reproduce the submission and read the HTTP outcome.** Submit an inquiry
+with the browser network panel open; the status of `POST /api/inquiries`
+splits the investigation cleanly:
+
+- **`201`** → the inquiry is stored; the defect is in the view or
+  configuration. Skip to step 5.
+- **`400`** → validation rejected it (invalid email, missing required field,
+  over-length value). It was never stored *by design*; the follow-up question
+  is whether the visitor saw and could act on the error.
+- **`5xx` or no response** → backend or database fault. Continue to step 4.
+
+**4. Backend logs, correlated per request.** Every request logs exactly one
+terminal-outcome entry (EventIds 20-22): rejections name the failing fields
+(EventId 23), successful writes log `Inquiry {id} created` (EventId 3), and a
+post-commit CRM failure logs an isolated warning. All entries for a request
+share a `correlationId`, obtainable from any 400/500 response's `traceId`
+extension, so a specific report can be traced end to end
+([runbook](docs/runbooks/missing-inquiry.md)). Sanitized unhandled-exception
+entries from the error middleware cover the 5xx path.
+
+**5. Database and configuration.** Confirm the app points at the expected
+store: a wrong `ConnectionStrings__DefaultConnection` (or a different
+`inquiries.db` per environment) makes rows "vanish" because the list reads a
+different database. Migrations run at startup and startup fails loudly if they
+cannot, so a missing table is unlikely.
+
+**SQL I'd run** (shipped in [`database/database.sql`](database/database.sql)):
+
+- **Count by status:** reconcile totals against what staff see; a large `New`
+  count behind an active filter usually *is* the reported "bug."
+- **Last 7 days:** confirm recent submissions actually landed, and when.
+- **Duplicates by email:** intake is not idempotent, so a visitor who
+  resubmitted after a timeout may have produced near-duplicates rather than one
+  missing row.
+- **Direct lookup** to settle stored-but-hidden vs. never-stored:
+  `SELECT * FROM CourseInquiries WHERE Email = @email;`
+
+**Communicating to non-technical stakeholders.** Lead with impact and facts,
+not mechanism: "I've confirmed that all inquiries from the last 7 days were
+stored and none were lost. The problem was simply in the filters on the
+dashboard." That lands better than "we're still confirming whether they reached
+us." State what is confirmed, what is still open, and when the next update
+comes; if data integrity is ever in question, say so plainly.
+
+**Preventing recurrence.**
+
+- *Detection:* alerting fed by the `/health` readiness endpoint and the
+  `CourseInquiryDashboard` meters (intake outcomes, CRM outcomes and retries).
+- *Forensics:* every rejection and server error is logged with a correlation
+  ID, so the "never stored" branch is provable after the fact.
+- *UI clarity:* the active filter is explicit ("Showing N of M · filtered by X"
+  with one-click Clear), so a filtered view can't be mistaken for missing data.
+- *Regression safety:* integration tests cover submit → list, and a periodic
+  reconciliation runs the count-by-status and last-7-days reports
+  ([runbook](docs/runbooks/missing-inquiry.md)).
 
 ---
 
 ## Security
 
-- **Input validation.** Request DTOs use DataAnnotations — `[Required]`,
-  `[StringLength]`, `[EmailAddress]`
-  ([CreateInquiryDto](backend/Models/Dtos/CreateInquiryDto.cs)) — and invalid input
-  becomes a `400 ProblemDetails` at model binding. Status is validated **name-only**
-  against the five defined values, rejecting numeric, composite, or unknown inputs
-  ([StatusNames](backend/Serialization/StatusNames.cs)); list-query parameters are
-  validated with bounds and overflow checks
+- **Input validation.** DTOs enforce `[Required]`, `[StringLength]`, and
+  `[EmailAddress]`
+  ([CreateInquiryDto](backend/Models/Dtos/CreateInquiryDto.cs)); invalid input
+  fails at model binding into a `400 ProblemDetails`. Status binds **name-only**
+  against the five known values, rejecting numeric, composite, or unknown
+  tokens ([StatusNames](backend/Serialization/StatusNames.cs)), and list-query
+  parameters get bounds and overflow checks
   ([ListInquiriesQueryDto](backend/Models/Dtos/ListInquiriesQueryDto.cs)). See
-  [C1–C3](docs/architecture/contracts.md#c1-intake-validation-and-representation).
-- **Over-posting.** The create DTO exposes only the seven visitor fields; client-set
-  `id`, `status`, and timestamps are ignored, and the service *forces* `Status.New`
-  and server-assigned UTC timestamps ([InquiryService](backend/Services/InquiryService.cs)).
-- **SQL injection.** All data access is EF Core LINQ / `ExecuteDeleteAsync`, which
-  parameterizes every query; there is no string-concatenated SQL in the runtime path.
-  (`database/database.sql` is a static deliverable, not executed by the app.)
-- **Authentication / authorization — the biggest gap, and out of assessment scope.**
-  Staff endpoints are currently **open**; same-origin fetch and "staff" labels are
-  not access control. The API must not be exposed publicly as-is — run only with
-  synthetic data locally. Production needs authenticated staff, least-privilege
-  policies, CSRF protection for cookie-authenticated mutations, and atomic audit
-  history ([C7](docs/architecture/contracts.md#c7-web-ui-and-hosting);
+  [C1-C3](docs/architecture/contracts.md#c1-intake-validation-and-representation).
+- **Over-posting.** The create DTO exposes only the seven visitor fields;
+  `id`, `status`, and timestamps are server-controlled: the service forces
+  `Status.New` and assigns UTC timestamps
+  ([InquiryService](backend/Services/InquiryService.cs)).
+- **SQL injection.** All data access goes through EF Core LINQ /
+  `ExecuteDeleteAsync`, which parameterizes every query; no string-built SQL
+  exists in the runtime path. (`database/database.sql` is a static deliverable,
+  never executed by the app.)
+- **Authentication/authorization (the biggest gap, and out of assessment
+  scope).** Staff endpoints are currently **open**: same-origin fetch and "staff"
+  labeling are not access control, so the API must not be exposed publicly
+  as-is. Production requires authenticated staff identities, least-privilege
+  policies, CSRF protection for cookie-authenticated mutations, and an audit
+  trail ([C7](docs/architecture/contracts.md#c7-web-ui-and-hosting);
   [future design](docs/architecture/future/authentication-authorization-audit.md)).
-- **Error handling.** `500`s are sanitized in **both Development and Production**
-  ([Program.cs](backend/Program.cs)): no stack traces, SQL, connection strings, or
-  visitor values reach the client, and validation errors don't echo attempted values
+- **Error handling.** `500` responses are sanitized in **both** Development and
+  Production ([Program.cs](backend/Program.cs)): no stack traces, SQL,
+  connection strings, or visitor values reach the client, and validation errors
+  never echo the attempted input
   ([C3](docs/architecture/contracts.md#c3-http-results-and-errors)).
-- **Logging & sensitive data.** Logs use an **allow-list** — inquiry id, attempt
-  number, outcome, error *type* — and **omit all visitor fields** (name, email,
-  phone, message); raw exceptions are never attached, EF Core logging is filtered to
-  `Critical`, and EF sensitive-data logging is off
-  ([C6](docs/architecture/contracts.md#c6-crm-retry-timeout-and-privacy)). Responses
-  never serialize the EF entity or a CRM exception. In production I'd add TLS
-  termination (the `https` launch profile exists), rate limiting / anti-abuse on the
-  public form and `POST`, and standard security headers.
+- **Logging and sensitive data.** Logging is allow-listed (inquiry id, attempt
+  number, outcome, and error *type* only); all visitor fields (name, email,
+  phone, message) are omitted, raw exceptions are never attached, and EF Core
+  sensitive-data logging is off
+  ([C6](docs/architecture/contracts.md#c6-crm-retry-timeout-and-privacy)).
+  Responses never serialize the EF entity or a CRM exception. In production I
+  would add TLS termination, rate limiting on the public form and `POST`, and
+  standard security headers.
 
 ---
 
 ## Accessibility
 
-Three considerations applied across the Razor host and React island
-([C7](docs/architecture/contracts.md#c7-web-ui-and-hosting); comprehensive outline in
-[`docs/frontend/accessibility.md`](docs/frontend/accessibility.md)):
+Three considerations applied across the Razor host and React island (full
+outline in [`docs/frontend/accessibility.md`](docs/frontend/accessibility.md)):
 
-1. **Semantic structure, data table architecture, and labelled controls (WCAG 1.3.1, 4.1.2).**
-   The queue is a real `<table>` with an explicit programmatic caption (`<caption className="sr-only">Incoming Course Inquiries Queue</caption>`),
-   `<th scope="col">` column headers, and dynamic sort direction indication (`aria-sort="ascending" | "descending"` on the Created date header).
-   Every interactive control carries an unambiguous accessible name — filter and sort dropdowns use `<label htmlFor>`
-   ([Toolbar](frontend/src/components/Toolbar.tsx)), and row controls use disambiguated labels like *"Status for {name}"*,
-   *"Apply for {name}"*, and *"Details for {name}"* ([InquiryTable](frontend/src/components/InquiryTable.tsx)) so screen-reader users
-   can distinguish controls across rows.
-2. **Keyboard operability, focus management, and bypass navigation (WCAG 2.1.1, 2.1.2, 2.4.1, 2.4.3, 2.4.7).**
-   A top-of-body Skip Navigation link (`<a href="#inquiry-queue" class="skip-link">`) allows keyboard users to bypass header/appbar/toolbar
-   controls directly to a persistent queue container (`<section id="inquiry-queue" tabindex="-1">`) across all queue states (loading, empty, error, ready).
-   All interactive actions are native keyboard-operable elements with high-contrast `:focus-visible` indicators (3:1 contrast ratio).
-   The detail modal drawer traps focus (`Tab`/`Shift+Tab`), sets the background `inert`, locks body scroll, closes on `Escape`,
-   and safely **returns focus to the opener button** on close — with a graceful fallback to `#inquiry-queue` or `#status-filter`
-   if the row was concurrently removed ([DetailPanel](frontend/src/components/DetailPanel.tsx), [App](frontend/src/App.tsx)).
-3. **Perceivable asynchronous feedback, error association, and non-color-dependent communication (WCAG 1.4.1, 3.3.1, 4.1.3).**
-   Asynchronous transitions announce through dual live regions ([LiveRegions](frontend/src/components/LiveRegions.tsx)):
-   a polite region (`role="status"`) for save confirmations, filter updates, and pagination transitions (announcing on-page count e.g. *"Page 2 (of 3) loaded, showing 20 matching inquiries"* alongside `aria-current="page"` on the active page indicator);
-   and an assertive region (`role="alert"`) for mutation errors and missing records. Failed status mutations associate inline `aria-invalid="true"`
-   on the row's `<select>`. Workflow status is never communicated by color alone: badges display the text **name**, supplemented in Colorblind Mode
-   by distinct shape and icon cues (solid pill + star, dashed + chat, dotted + clock, double border + check, slash).
+1. **Semantic structure and labelled controls (WCAG 1.3.1, 4.1.2).** The queue
+   is a real `<table>` with a screen-reader-only caption, `<th scope="col">`
+   headers, and `aria-sort` on the sortable Created column. Every interactive
+   control has an unambiguous accessible name: dropdowns use `<label htmlFor>`,
+   and per-row controls are disambiguated (*"Status for {name}"*, *"Details for
+   {name}"*) so screen-reader users can tell rows apart.
+2. **Keyboard operability and focus management (WCAG 2.1.1, 2.1.2, 2.4.1,
+   2.4.3, 2.4.7).** A skip link bypasses the header and toolbar straight to the
+   queue container; every action is a native keyboard-operable element with a
+   high-contrast `:focus-visible` indicator. The detail modal traps focus,
+   marks the background `inert`, closes on `Escape`, and **returns focus to the
+   opener button**, falling back to the queue if that row was concurrently
+   removed.
+3. **Perceivable async feedback, and status never conveyed by color alone
+   (WCAG 1.4.1, 3.3.1, 4.1.3).** Dual live regions announce outcomes:
+   politely (`role="status"`) for saves, filter, and pagination updates with
+   counts, and assertively (`role="alert"`) for errors and missing records. A
+   failed status mutation marks the row's `<select>` with `aria-invalid`.
+   Workflow badges always show the status text, and Colorblind Mode adds
+   distinct shapes and icons per status.
+
 ---
 
 ## Code quality
 
-The solution is organized as a **layered, single-deployable** app, chosen to keep
-business rules in one testable place without over-engineering a small CRUD tool
+Organized as a **layered single deployable**, keeping business rules in one
+testable place without over-engineering a small CRUD tool
 ([ADR-0005](docs/architecture/adr/0005-layered-service-dto.md)):
 
-- **Thin controllers → service → EF Core.** `InquiriesController` only handles HTTP
-  (routing, binding, status codes) and delegates to `IInquiryService`, which owns
-  every business rule (forced status/timestamps, no-op updates, deterministic
-  filter/paging, hard delete, and the persist-first/sync-second CRM boundary).
-  `AppDbContext` is used directly — EF Core already is a unit-of-work + repository, so
-  no repository layer was added.
-- **DTOs separate the wire contract from the entity.** `CreateInquiryDto` /
-  `UpdateStatusDto` / `InquiryResponse` prevent over-posting and keep the API stable;
-  the EF entity is never serialized.
-- **The CRM is behind a port** (`ICrmClient`) so the service depends on an
-  abstraction, and time is injected via `TimeProvider` — both make failure and
-  timing paths deterministically testable
-  ([ADR-0007](docs/architecture/adr/0007-crm-port-retry-logging.md)).
-- **Clear folders.** Backend: `Controllers/`, `Services/`, `Models/` + `Models/Dtos/`,
-  `Serialization/`, `Hosting/`, `Pages/`. Frontend: pure logic in `src/lib/`
-  (query/state/paging/outcome helpers, unit-tested in isolation) kept separate from
+- **Thin controllers → service → EF Core.** `InquiriesController` handles only
+  HTTP semantics (routing, binding, status codes); `IInquiryService` owns every
+  business rule (forced status and timestamps, no-op update handling,
+  deterministic filtering/paging, hard delete, and the persist-first/
+  sync-second CRM boundary). `AppDbContext` is used directly because EF Core
+  already is a unit-of-work + repository; adding one would be redundant
+  abstraction.
+- **DTOs isolate the wire contract from the entity.** `CreateInquiryDto`,
+  `UpdateStatusDto`, and `InquiryResponse` prevent over-posting and keep the
+  API stable; the EF entity is never serialized.
+- **External concerns sit behind ports.** The CRM is behind `ICrmClient` and
+  time behind `TimeProvider`, so failure and timing paths are deterministically
+  testable ([ADR-0007](docs/architecture/adr/0007-crm-port-retry-logging.md)).
+- **Logic separated from presentation.** Backend folders mirror the layers
+  (`Controllers/`, `Services/`, `Models/Dtos/`, `Serialization/`, `Hosting/`);
+  frontend pure logic lives in unit-tested `src/lib/` helpers, apart from
   presentational `src/components/`.
-- **Decisions and edge cases are written down** as ADRs and boundary contracts, and
-  the behavior was built **test-first** (red → green → refactor) with xUnit and
-  Vitest, so the "why" and the guardrails outlive the code
-  ([ADR-0009](docs/architecture/adr/0009-testable-boundary-contracts.md)).
+- **Decisions and tests outlive the code.** ADRs and boundary contracts record
+  the "why"; behavior was built test-first (red → green → refactor) with xUnit
+  and Vitest ([ADR-0009](docs/architecture/adr/0009-testable-boundary-contracts.md)).
